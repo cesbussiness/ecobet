@@ -91,23 +91,32 @@ class Layout {
   }
 
   setupMediaQuery() {
-    // En móvil, siempre colapsado. En desktop, respetar preferencia
-    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    // En móvil, ocultar sidebar completamente con toggle button
+    // En desktop, respetar preferencia de colapso
+    const mediaQuery = window.matchMedia('(max-width: 479px)');
     const handleMediaChange = (e) => {
       const sidebar = document.querySelector('.sidebar');
       const content = document.querySelector('.content');
       
       if (e.matches) {
-        // Móvil: forzar colapsado
-        sidebar.classList.add('collapsed');
-        content?.classList.add('sidebar-collapsed');
+        // Móvil pequeño (<480px): sidebar oculto por defecto
+        sidebar?.classList.add('mobile-hidden');
+        content?.classList.add('sidebar-mobile-hidden');
+        
+        // Crear botón hamburguesa si no existe
+        if (!document.querySelector('.hamburger-menu')) {
+          this.createMobileToggle();
+        }
       } else {
-        // Desktop: aplicar preferencia guardada
+        // Desktop/tablet: usar estado guardado
+        sidebar?.classList.remove('mobile-hidden');
+        content?.classList.remove('sidebar-mobile-hidden');
+        
         if (this.sidebarCollapsed) {
-          sidebar.classList.add('collapsed');
+          sidebar?.classList.add('collapsed');
           content?.classList.add('sidebar-collapsed');
         } else {
-          sidebar.classList.remove('collapsed');
+          sidebar?.classList.remove('collapsed');
           content?.classList.remove('sidebar-collapsed');
         }
       }
@@ -115,6 +124,41 @@ class Layout {
     
     mediaQuery.addListener(handleMediaChange);
     handleMediaChange(mediaQuery);
+  }
+
+  createMobileToggle() {
+    // Crear botón hamburguesa para móvil
+    const header = document.querySelector('.sidebar-header');
+    if (!header) return;
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'hamburger-menu';
+    toggleBtn.innerHTML = '☰';
+    toggleBtn.type = 'button';
+    toggleBtn.setAttribute('aria-label', 'Toggle menu');
+    
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const sidebar = document.querySelector('.sidebar');
+      sidebar?.classList.toggle('mobile-active');
+      
+      // Crear overlay si no existe
+      let overlay = document.querySelector('.sidebar-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+        
+        overlay.addEventListener('click', () => {
+          sidebar?.classList.remove('mobile-active');
+          overlay?.remove();
+        });
+      } else {
+        overlay.classList.toggle('active');
+      }
+    });
+
+    header.insertBefore(toggleBtn, header.firstChild);
   }
 
   setNav(items) {
