@@ -140,14 +140,85 @@
       background: var(--border);
     }
 
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+
     .form-actions {
       display: flex;
       gap: 12px;
       margin-top: 30px;
+      flex-wrap: wrap;
     }
 
     .form-actions button {
       flex: 1;
+      min-width: 150px;
+    }
+
+    .audio-recorder {
+      background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+      border: 2px dashed #ef4444;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .audio-recorder.recording {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+      border-color: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+
+    .recording-timer {
+      font-size: 32px;
+      font-weight: 700;
+      color: #ef4444;
+      margin: 15px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .recording-timer.recording {
+      color: #f59e0b;
+    }
+
+    .audio-list {
+      margin-top: 16px;
+    }
+
+    .audio-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+    }
+
+    .audio-item audio {
+      flex: 1;
+      max-width: 250px;
+    }
+
+    .audio-info {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text);
     }
 
     .ai-response {
@@ -167,26 +238,6 @@
       margin-top: 0;
       color: var(--dark);
       font-size: 16px;
-    }
-
-    .loading {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--text);
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid var(--border);
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
     }
 
     .alert {
@@ -225,6 +276,20 @@
       .form-actions {
         flex-direction: column;
       }
+
+      .form-actions button {
+        width: 100%;
+      }
+
+      .audio-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .audio-item audio {
+        max-width: 100%;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -247,7 +312,7 @@
   <div class="content" id="content">
     <div class="page-header">
       <h1>📝 Nuevo Informe</h1>
-      <p>Crea un informe de ecosonografía con análisis IA</p>
+      <p>Crea un informe de ecosonografía con IA - Graba tus notas</p>
     </div>
 
     <div id="alert-container"></div>
@@ -282,25 +347,26 @@
         </select>
       </div>
 
+      <!-- GRABADORA DE AUDIO COMO WHATSAPP -->
       <div class="form-group">
-        <label>Hallazgos Clínicos *</label>
+        <label>🎙️ Grabar Hallazgos *</label>
         
-        <!-- AUDIOS INPUT -->
-        <div style="margin-bottom: 16px; padding: 16px; background: #f0f4f8; border-radius: 10px; border: 2px dashed var(--border);">
-          <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--dark);">
-            🎙️ Adjuntar Audios (opcional)
-          </label>
-          
-          <input type="file" id="audio-input" accept="audio/*" multiple style="margin-bottom: 12px;">
-          
-          <div id="audio-list" style="margin-top: 12px;"></div>
-          
-          <button type="button" class="btn btn-secondary" onclick="transcribirAudios()" style="margin-top: 12px; width: 100%;">
-            ✨ Transcribir Audios
-          </button>
+        <div class="audio-recorder" id="recorder-box">
+          <div style="margin-bottom: 15px;">
+            <button type="button" class="btn btn-danger" id="btn-record" onclick="startRecording()">
+              ⏺️ Comenzar a Grabar
+            </button>
+            <button type="button" class="btn btn-secondary" id="btn-stop" onclick="stopRecording()" style="display: none;">
+              ⏹️ Detener
+            </button>
+          </div>
+
+          <div class="recording-timer" id="timer" style="display: none;">00:00</div>
+
+          <div class="audio-list" id="audio-list"></div>
         </div>
-        
-        <textarea id="hallazgos" rows="6" placeholder="Describe los hallazgos o pega aquí la transcripción de los audios..." required></textarea>
+
+        <textarea id="hallazgos" rows="6" placeholder="Los audios grabados se transcribirán aquí automáticamente..." required></textarea>
       </div>
 
       <div class="form-group">
@@ -323,6 +389,12 @@
   <script src="../js/layout.js"></script>
 
   <script>
+    let mediaRecorder;
+    let audioChunks = [];
+    let recordingStartTime;
+    let timerInterval;
+    let grabacionesAudio = [];
+
     window.addEventListener('load', () => {
       console.log('✅ Página Nuevo Informe cargada');
       
@@ -350,6 +422,164 @@
         option.textContent = `${p.nombre} ${p.apellido || ''} (${p.cedula})`;
         select.appendChild(option);
       });
+    }
+
+    async function startRecording() {
+      try {
+        console.log('🎙️ Iniciando grabación...');
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        recordingStartTime = Date.now();
+
+        mediaRecorder.ondataavailable = (event) => {
+          audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          
+          await procesarAudio(audioBlob, audioUrl);
+        };
+
+        mediaRecorder.start();
+
+        // Cambiar UI
+        document.getElementById('btn-record').style.display = 'none';
+        document.getElementById('btn-stop').style.display = 'inline-flex';
+        document.getElementById('timer').style.display = 'block';
+        document.getElementById('recorder-box').classList.add('recording');
+
+        // Timer
+        timerInterval = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+          const mins = Math.floor(elapsed / 60);
+          const secs = elapsed % 60;
+          document.getElementById('timer').textContent = 
+            `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }, 100);
+
+        console.log('✅ Grabación iniciada');
+
+      } catch (error) {
+        console.error('❌ Error:', error);
+        mostrarAlerta('❌ No se puede acceder al micrófono: ' + error.message, 'error');
+      }
+    }
+
+    function stopRecording() {
+      console.log('⏹️ Deteniendo grabación...');
+      
+      mediaRecorder.stop();
+      clearInterval(timerInterval);
+
+      // Detener stream
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+      // Cambiar UI
+      document.getElementById('btn-record').style.display = 'inline-flex';
+      document.getElementById('btn-stop').style.display = 'none';
+      document.getElementById('timer').style.display = 'none';
+      document.getElementById('recorder-box').classList.remove('recording');
+    }
+
+    async function procesarAudio(audioBlob, audioUrl) {
+      try {
+        console.log('📡 Procesando audio...');
+        
+        // Convertir a base64
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64Audio = e.target.result.split(',')[1];
+
+          try {
+            // Transcribir
+            const response = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+              },
+              body: JSON.stringify({
+                audioBase64: base64Audio,
+                mimeType: 'audio/mp3'
+              })
+            });
+
+            if (!response.ok) {
+              throw new Error(`Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('✅ Audio transcrito');
+
+            // Guardar grabación
+            const grabacion = {
+              id: 'aud-' + Date.now(),
+              url: audioUrl,
+              transcripcion: data.transcripcion,
+              createdAt: new Date().toLocaleTimeString()
+            };
+            grabacionesAudio.push(grabacion);
+
+            // Mostrar en lista
+            mostrarAudios();
+
+            // Agregar transcripción a hallazgos
+            const hallazgosField = document.getElementById('hallazgos');
+            if (hallazgosField.value) {
+              hallazgosField.value += '\n\n---\n\n' + data.transcripcion;
+            } else {
+              hallazgosField.value = data.transcripcion;
+            }
+
+            mostrarAlerta(`✅ Audio ${grabacionesAudio.length} grabado y transcrito`, 'success');
+
+          } catch (error) {
+            console.error('❌ Error transcribiendo:', error);
+            mostrarAlerta('⚠️ Audio guardado pero sin transcripción (configurar OPENAI_API_KEY)', 'error');
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+
+      } catch (error) {
+        console.error('❌ Error:', error);
+        mostrarAlerta('❌ Error procesando audio', 'error');
+      }
+    }
+
+    function mostrarAudios() {
+      const list = document.getElementById('audio-list');
+      
+      if (grabacionesAudio.length === 0) {
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = grabacionesAudio.map((audio, i) => `
+        <div class="audio-item">
+          <div class="audio-info">
+            🎵 Audio ${i + 1} - ${audio.createdAt}
+          </div>
+          <audio controls style="width: 150px;">
+            <source src="${audio.url}" type="audio/mp3">
+          </audio>
+          <button type="button" class="btn btn-danger" onclick="eliminarAudio(${i})" style="padding: 6px 12px; font-size: 12px;">
+            ✕ Eliminar
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function eliminarAudio(index) {
+      grabacionesAudio.splice(index, 1);
+      mostrarAudios();
+      
+      // Limpiar transcripción del hallazgo
+      const hallazgosField = document.getElementById('hallazgos');
+      hallazgosField.value = grabacionesAudio.map(a => a.transcripcion).join('\n\n---\n\n');
     }
 
     async function generarInforme() {
@@ -381,7 +611,6 @@
       btn.disabled = true;
 
       try {
-        // Llamar API de Netlify que usa Claude
         console.log('📡 Llamando API Claude...');
         
         const response = await fetch('/api/ai-process', {
@@ -413,7 +642,7 @@
         console.log('✅ Respuesta IA:', data);
 
         // Mostrar resultado
-        const resultado = data.analisis || data.resultado || 'Sin respuesta';
+        const resultado = data.analisis || data.resultado || 'Sin respuesta de IA';
         mostrarResultado(resultado, paciente, fecha, tipo);
 
         // Guardar informe
@@ -488,7 +717,6 @@
       };
 
       if (typeof storage !== 'undefined') {
-        // Guardar en localStorage (próximo: supabase)
         let informes = JSON.parse(localStorage.getItem('ecosonografia_informes') || '[]');
         informes.push(informe);
         localStorage.setItem('ecosonografia_informes', JSON.stringify(informes));
@@ -513,111 +741,11 @@
       document.getElementById('observaciones').value = '';
       document.getElementById('resultado-container').innerHTML = '';
       document.getElementById('alert-container').innerHTML = '';
+      grabacionesAudio = [];
+      mostrarAudios();
       
       const hoy = new Date().toISOString().split('T')[0];
       document.getElementById('fecha').value = hoy;
-    }
-
-
-    let audiosAdjuntos = [];
-
-    document.getElementById('audio-input').addEventListener('change', (e) => {
-      audiosAdjuntos = Array.from(e.target.files);
-      mostrarAudios();
-    });
-
-    function mostrarAudios() {
-      const list = document.getElementById('audio-list');
-      
-      if (audiosAdjuntos.length === 0) {
-        list.innerHTML = '';
-        return;
-      }
-
-      list.innerHTML = audiosAdjuntos.map((audio, i) => `
-        <div style="padding: 8px; background: white; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 12px;">
-            🎵 ${audio.name} (${(audio.size / 1024).toFixed(1)} KB)
-          </span>
-          <button type="button" class="btn btn-small" onclick="eliminarAudio(${i})" style="background: #ef4444; color: white; padding: 4px 8px;">
-            ✕
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function eliminarAudio(index) {
-      audiosAdjuntos.splice(index, 1);
-      document.getElementById('audio-input').value = '';
-      mostrarAudios();
-    }
-
-    async function transcribirAudios() {
-      if (audiosAdjuntos.length === 0) {
-        mostrarAlerta('⚠️ No hay audios para transcribir', 'error');
-        return;
-      }
-
-      console.log('🎙️ Transcribiendo', audiosAdjuntos.length, 'audio(s)...');
-
-      let transcripcionCompleta = '';
-
-      for (let i = 0; i < audiosAdjuntos.length; i++) {
-        const audio = audiosAdjuntos[i];
-        
-        try {
-          console.log('📡 Procesando audio', i + 1, 'de', audiosAdjuntos.length);
-          
-          // Convertir audio a base64
-          const base64 = await leerArchivoBase64(audio);
-
-          // Llamar API de transcripción
-          const response = await fetch('/api/transcribe', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
-            },
-            body: JSON.stringify({
-              audioBase64: base64.split(',')[1],
-              mimeType: audio.type
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(`Error: ${response.status}`);
-          }
-
-          const data = await response.json();
-          console.log('✅ Audio', i + 1, 'transcrito');
-
-          transcripcionCompleta += `[Audio ${i + 1}]
-${data.transcripcion}
-
-`;
-
-        } catch (error) {
-          console.error('❌ Error transcribiendo audio', i + 1, ':', error);
-          mostrarAlerta('❌ Error transcribiendo audio ' + (i + 1), 'error');
-          return;
-        }
-      }
-
-      // Llenar campo de hallazgos con transcripción
-      const hallazgosField = document.getElementById('hallazgos');
-      hallazgosField.value = transcripcionCompleta + hallazgosField.value;
-      
-      mostrarAlerta('✅ Audios transcriptos y añadidos a hallazgos', 'success');
-      console.log('✅ Todos los audios procesados');
-    }
-
-    function leerArchivoBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
     }
 
     function logout(e) {
