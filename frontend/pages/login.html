@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ecosonografía — Ingreso</title>
-  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="../css/estilos.css">
   <style>
     body {
       background: linear-gradient(135deg, #0f172a 0%, #1e40af 50%, #0d9488 100%);
@@ -308,8 +308,8 @@
     </div>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/layout.js"></script>
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
 
   <script>
     document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -366,12 +366,7 @@
     });
 
     // Auto-rellenar en desarrollo (opcional, comentar en producción)
-    document.addEventListener('DOMContentLoaded', () => {
-      if (process.env?.NODE_ENV !== 'production') {
-        // document.getElementById('usuario').value = 'admin';
-        // document.getElementById('password').value = 'Ecos2026$Admin';
-      }
-    });
+    // En el navegador no existe process.env, así que omitimos esta verificación
   </script>
 </body>
 </html>
