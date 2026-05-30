@@ -116,37 +116,85 @@ class API {
   async createPaciente(data) {
     // data: {cedula, nombre, apellido, email, telefono, fechaNacimiento, genero}
     // NO inventar nada; todos los campos requeridos deben venir de la UI
-    return await this.request('/patients', {
-      method: 'POST',
-      body: data
-    });
+    try {
+      return await this.request('/patients', {
+        method: 'POST',
+        body: data
+      });
+    } catch (error) {
+      // Si API falla, guardar en localStorage
+      console.warn('❌ API no disponible, guardando en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        return storage.addPaciente(data);
+      }
+      throw error;
+    }
   }
 
   async getPacientes(filtros = {}) {
     // filtros: {search, page, limit, estado}
-    const params = new URLSearchParams(filtros);
-    return await this.request(`/patients?${params}`, {
-      method: 'GET'
-    });
+    try {
+      const params = new URLSearchParams(filtros);
+      return await this.request(`/patients?${params}`, {
+        method: 'GET'
+      });
+    } catch (error) {
+      // Si API falla, cargar de localStorage
+      console.warn('❌ API no disponible, cargando de localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        const pacientes = storage.getPacientes();
+        return { data: pacientes }; // Retornar en formato consistente
+      }
+      throw error;
+    }
   }
 
   async getPaciente(id) {
-    return await this.request(`/patients/${id}`, {
-      method: 'GET'
-    });
+    try {
+      return await this.request(`/patients/${id}`, {
+        method: 'GET'
+      });
+    } catch (error) {
+      // Si API falla, buscar en localStorage
+      console.warn('❌ API no disponible, buscando en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        const paciente = storage.getPacientes().find(p => p.id === id);
+        if (paciente) return { data: paciente };
+      }
+      throw error;
+    }
   }
 
   async updatePaciente(id, data) {
-    return await this.request(`/patients/${id}`, {
-      method: 'PUT',
-      body: data
-    });
+    try {
+      return await this.request(`/patients/${id}`, {
+        method: 'PUT',
+        body: data
+      });
+    } catch (error) {
+      // Si API falla, actualizar en localStorage
+      console.warn('❌ API no disponible, actualizando en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        return storage.updatePaciente(id, data);
+      }
+      throw error;
+    }
   }
 
   async deletePaciente(id) {
-    return await this.request(`/patients/${id}`, {
-      method: 'DELETE'
-    });
+    try {
+      return await this.request(`/patients/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      // Si API falla, eliminar de localStorage
+      console.warn('❌ API no disponible, eliminando de localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        storage.deletePaciente(id);
+        return { success: true };
+      }
+      throw error;
+    }
   }
 
   /* ───────────────────────────────────────────────────────────────
@@ -156,37 +204,87 @@ class API {
   async createInforme(data) {
     // data: {pacienteId, textoOriginal, hallazgos, recomendaciones}
     // El AI lo procesa, NO inventamos hallazgos
-    return await this.request('/reports', {
-      method: 'POST',
-      body: data
-    });
+    try {
+      return await this.request('/reports', {
+        method: 'POST',
+        body: data
+      });
+    } catch (error) {
+      // Si API falla, guardar en localStorage
+      console.warn('❌ API no disponible, guardando informe en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        return storage.addInforme(data);
+      }
+      throw error;
+    }
   }
 
   async getInformes(filtros = {}) {
     // filtros: {pacienteId, estado, fechaDesde, fechaHasta, page, limit}
-    const params = new URLSearchParams(filtros);
-    return await this.request(`/reports?${params}`, {
-      method: 'GET'
-    });
+    try {
+      const params = new URLSearchParams(filtros);
+      return await this.request(`/reports?${params}`, {
+        method: 'GET'
+      });
+    } catch (error) {
+      // Si API falla, cargar de localStorage
+      console.warn('❌ API no disponible, cargando informes de localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        const informes = filtros.pacienteId
+          ? storage.getInformesPorPaciente(filtros.pacienteId)
+          : storage.getInformes();
+        return { data: informes };
+      }
+      throw error;
+    }
   }
 
   async getInforme(id) {
-    return await this.request(`/reports/${id}`, {
-      method: 'GET'
-    });
+    try {
+      return await this.request(`/reports/${id}`, {
+        method: 'GET'
+      });
+    } catch (error) {
+      // Si API falla, buscar en localStorage
+      console.warn('❌ API no disponible, buscando informe en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        const informe = storage.getInformes().find(i => i.id === id);
+        if (informe) return { data: informe };
+      }
+      throw error;
+    }
   }
 
   async updateInforme(id, data) {
-    return await this.request(`/reports/${id}`, {
-      method: 'PUT',
-      body: data
-    });
+    try {
+      return await this.request(`/reports/${id}`, {
+        method: 'PUT',
+        body: data
+      });
+    } catch (error) {
+      // Si API falla, actualizar en localStorage
+      console.warn('❌ API no disponible, actualizando informe en localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        return storage.updateInforme(id, data);
+      }
+      throw error;
+    }
   }
 
   async deleteInforme(id) {
-    return await this.request(`/reports/${id}`, {
-      method: 'DELETE'
-    });
+    try {
+      return await this.request(`/reports/${id}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      // Si API falla, eliminar de localStorage
+      console.warn('❌ API no disponible, eliminando informe de localStorage:', error);
+      if (typeof storage !== 'undefined') {
+        storage.deleteInforme(id);
+        return { success: true };
+      }
+      throw error;
+    }
   }
 
   /* ───────────────────────────────────────────────────────────────
