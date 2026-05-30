@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Histórico — Ecosonografía</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .filters {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .informes-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .informe-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-base);
+    }
+
+    .informe-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-primary);
+    }
+
+    .informe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--space-md);
+      gap: var(--space-md);
+    }
+
+    .informe-patient {
+      font-weight: 600;
+      color: var(--color-text-dark);
+      font-size: var(--size-lg);
+    }
+
+    .informe-date {
+      font-size: var(--size-sm);
+      color: var(--color-text-muted);
+    }
+
+    .informe-status {
+      display: inline-block;
+      padding: 0.25rem var(--space-md);
+      border-radius: 999px;
+      font-size: var(--size-xs);
+      font-weight: 600;
+    }
+
+    .status-draft {
+      background: rgba(217, 119, 6, 0.1);
+      color: var(--color-warning);
+    }
+
+    .status-final {
+      background: rgba(5, 150, 105, 0.1);
+      color: var(--color-success);
+    }
+
+    .status-sent {
+      background: rgba(8, 145, 178, 0.1);
+      color: var(--color-info);
+    }
+
+    .informe-preview {
+      color: var(--color-text-muted);
+      font-size: var(--size-sm);
+      margin: var(--space-md) 0;
+      line-height: var(--line-height-normal);
+      max-height: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .informe-actions {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-lg);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .informe-actions .btn {
+      flex: 1;
+      padding: var(--space-sm) var(--space-md);
+      font-size: var(--size-sm);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--color-text-muted);
+    }
+
+    /* Mobile */
+    @media (max-width: 767px) {
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .informes-list {
+        grid-template-columns: 1fr;
+      }
+
+      .informe-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body class="with-sidebar">
+  <div class="content">
+    <h1 style="margin-bottom: var(--space-lg);">Histórico de Informes</h1>
+
+    <!-- Filtros -->
+    <div class="filters">
+      <div class="form-group" style="margin: 0;">
+        <label for="filter-estado">Estado</label>
+        <select id="filter-estado">
+          <option value="">Todos</option>
+          <option value="borrador">Borrador</option>
+          <option value="finalizado">Finalizado</option>
+          <option value="enviado">Enviado</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label for="filter-desde">Desde</label>
+        <input type="date" id="filter-desde">
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label for="filter-hasta">Hasta</label>
+        <input type="date" id="filter-hasta">
+      </div>
+
+      <div class="form-group" style="margin: 0;">
+        <label for="filter-paciente">Paciente</label>
+        <input type="text" id="filter-paciente" placeholder="Buscar paciente...">
+      </div>
+
+      <div style="display: flex; gap: var(--space-md); align-items: flex-end;">
+        <button class="btn btn-primary" id="filter-btn">🔍 Filtrar</button>
+        <button class="btn btn-secondary" id="reset-btn">↻ Limpiar</button>
+      </div>
+    </div>
+
+    <!-- Lista de informes -->
+    <div class="informes-list" id="informes-container">
+      <div style="grid-column: 1/-1;">
+        <p style="text-align: center; padding: var(--space-2xl); color: var(--color-text-muted);">
+          Cargando informes...
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+
+  <script>
+    layout.setNav([
+      {label: 'Dashboard', icon: '📊', href: 'dashboard.html'},
+      {label: 'Nuevo Informe', icon: '📝', href: 'nuevo-informe.html'},
+      {label: 'Pacientes', icon: '👥', href: 'pacientes.html'},
+      {label: 'Histórico', icon: '📋', href: 'historico.html', active: true},
+      {label: 'Configuración', icon: '⚙️', href: 'configuracion.html'}
+    ]);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInformes();
+      setupFilters();
+    });
+
+    function setupFilters() {
+      document.getElementById('filter-btn').addEventListener('click', loadInformes);
+      document.getElementById('reset-btn').addEventListener('click', () => {
+        document.getElementById('filter-estado').value = '';
+        document.getElementById('filter-desde').value = '';
+        document.getElementById('filter-hasta').value = '';
+        document.getElementById('filter-paciente').value = '';
+        loadInformes();
+      });
+    }
+
+    async function loadInformes() {
+      const filtros = {
+        estado: document.getElementById('filter-estado').value,
+        fechaDesde: document.getElementById('filter-desde').value,
+        fechaHasta: document.getElementById('filter-hasta').value,
+        limit: 1000
+      };
+
+      try {
+        const response = await api.getInformes(filtros);
+        renderInformes(response.data || []);
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('informes-container').innerHTML = `
+          <div style="grid-column: 1/-1;" class="alert alert-error">
+            Error al cargar informes: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderInformes(informes) {
+      const container = document.getElementById('informes-container');
+
+      if (!informes || informes.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1/-1;">
+            <div class="empty-state">
+              <div style="font-size: 3rem; margin-bottom: var(--space-md);">📋</div>
+              <p>No hay informes con los filtros seleccionados</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = informes.map(informe => {
+        const fecha = new Date(informe.created_at);
+        const fechaFormato = fecha.toLocaleDateString('es-ES', {
+          year: 'numeric', month: 'short', day: 'numeric'
+        });
+        const statusClase = getStatusClase(informe.estado);
+        const preview = (informe.hallazgos || informe.textoOriginal || '').substring(0, 150);
+
+        return `
+          <div class="informe-card">
+            <div class="informe-header">
+              <div>
+                <div class="informe-patient">
+                  ${informe.paciente?.nombre || 'N/A'} ${informe.paciente?.apellido || ''}
+                </div>
+                <div class="informe-date">${fechaFormato}</div>
+              </div>
+              <span class="informe-status ${statusClase}">
+                ${informe.estado}
+              </span>
+            </div>
+
+            <div class="informe-preview">
+              ${preview}...
+            </div>
+
+            <div class="informe-actions">
+              <button class="btn btn-secondary" onclick="verInforme('${informe.id}')">
+                👁 Ver
+              </button>
+              ${informe.estado !== 'enviado' ? `
+                <button class="btn btn-secondary" onclick="editarInforme('${informe.id}')">
+                  ✎ Editar
+                </button>
+              ` : ''}
+              <button class="btn btn-secondary" onclick="descargarPDF('${informe.id}')">
+                📥 PDF
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getStatusClase(estado) {
+      switch(estado) {
+        case 'borrador': return 'status-draft';
+        case 'finalizado': return 'status-final';
+        case 'enviado': return 'status-sent';
+        default: return '';
+      }
+    }
+
+    function verInforme(id) {
+      // Redirigir a detalle del informe (página a crear)
+      window.location.href = `informe-detail.html?id=${id}`;
+    }
+
+    function editarInforme(id) {
+      // Redirigir a editar
+      window.location.href = `informe-edit.html?id=${id}`;
+    }
+
+    async function descargarPDF(id) {
+      try {
+        const result = await api.generatePDF(id);
+        // Descargar o abrir PDF según lo que devuelva el backend
+        alert('PDF generado: ' + (result.pdfUrl || 'OK'));
+      } catch (error) {
+        alert('Error generando PDF: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

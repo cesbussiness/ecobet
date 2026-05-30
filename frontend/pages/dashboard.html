@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Ecosonografía</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-2xl);
+      flex-wrap: wrap;
+      gap: var(--space-lg);
+    }
+
+    .welcome-section h1 {
+      margin: 0;
+    }
+
+    .welcome-section p {
+      margin: var(--space-sm) 0 0 0;
+      color: var(--color-text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: var(--space-md);
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-2xl);
+    }
+
+    .stat-card {
+      background: var(--color-white);
+      border-left: 4px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card.success { border-left-color: var(--color-success); }
+    .stat-card.warning { border-left-color: var(--color-warning); }
+    .stat-card.error { border-left-color: var(--color-error); }
+
+    .stat-value {
+      font-size: var(--size-2xl);
+      font-weight: 700;
+      color: var(--color-text-dark);
+      margin-bottom: var(--space-sm);
+    }
+
+    .stat-label {
+      font-size: var(--size-sm);
+      color: var(--color-text-muted);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-2xl);
+    }
+
+    .action-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+    }
+
+    .action-card:hover {
+      border-color: var(--color-primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-4px);
+    }
+
+    .action-card-icon {
+      font-size: 2.5rem;
+    }
+
+    .action-card-label {
+      font-weight: 600;
+      color: var(--color-text-dark);
+    }
+
+    .recent-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .recent-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .recent-card-header {
+      background: var(--color-bg-lighter);
+      padding: var(--space-lg);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .recent-card-header h3 {
+      margin: 0;
+    }
+
+    .recent-card-body {
+      padding: var(--space-lg);
+    }
+
+    .recent-item {
+      padding: var(--space-md) 0;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .recent-item:last-child {
+      border-bottom: none;
+    }
+
+    .recent-item-title {
+      font-weight: 600;
+      color: var(--color-text-dark);
+    }
+
+    .recent-item-date {
+      font-size: var(--size-sm);
+      color: var(--color-text-muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem var(--space-md);
+      border-radius: 999px;
+      font-size: var(--size-xs);
+      font-weight: 600;
+    }
+
+    .badge-draft {
+      background: rgba(217, 119, 6, 0.1);
+      color: var(--color-warning);
+    }
+
+    .badge-final {
+      background: rgba(5, 150, 105, 0.1);
+      color: var(--color-success);
+    }
+
+    .badge-sent {
+      background: rgba(8, 145, 178, 0.1);
+      color: var(--color-info);
+    }
+
+    /* Mobile (< 480px) */
+    @media (max-width: 479px) {
+      .dashboard-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header-actions {
+        flex-direction: column;
+      }
+
+      .header-actions .btn {
+        width: 100%;
+      }
+
+      .quick-stats,
+      .quick-actions,
+      .recent-section {
+        grid-template-columns: 1fr;
+      }
+
+      .action-card-icon {
+        font-size: 2rem;
+      }
+    }
+
+    /* Tablet (480px - 767px) */
+    @media (max-width: 767px) {
+      .quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body class="with-sidebar">
+  <div class="content">
+    <div class="dashboard-header">
+      <div class="welcome-section">
+        <h1>Bienvenido, <span id="user-name">Doctor</span></h1>
+        <p id="current-date"></p>
+      </div>
+      <div class="header-actions">
+        <a href="nuevo-informe.html" class="btn btn-primary">
+          ➕ Nuevo Informe
+        </a>
+      </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="quick-stats">
+      <div class="stat-card">
+        <div class="stat-value" id="total-pacientes">0</div>
+        <div class="stat-label">Pacientes Registrados</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-value" id="total-informes">0</div>
+        <div class="stat-label">Informes Totales</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-value" id="pendientes">0</div>
+        <div class="stat-label">Borradores</div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-value" id="enviados">0</div>
+        <div class="stat-label">Enviados</div>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <h2 style="margin-bottom: var(--space-lg);">Accesos rápidos</h2>
+    <div class="quick-actions">
+      <a href="nuevo-informe.html" class="action-card">
+        <div class="action-card-icon">📝</div>
+        <div class="action-card-label">Nuevo Informe</div>
+      </a>
+      <a href="pacientes.html" class="action-card">
+        <div class="action-card-icon">👥</div>
+        <div class="action-card-label">Pacientes</div>
+      </a>
+      <a href="historico.html" class="action-card">
+        <div class="action-card-icon">📋</div>
+        <div class="action-card-label">Histórico</div>
+      </a>
+      <a href="configuracion.html" class="action-card">
+        <div class="action-card-icon">⚙️</div>
+        <div class="action-card-label">Configuración</div>
+      </a>
+    </div>
+
+    <!-- Informes recientes -->
+    <h2 style="margin-top: var(--space-2xl); margin-bottom: var(--space-lg);">Informes Recientes</h2>
+    <div class="recent-section">
+      <div class="recent-card">
+        <div class="recent-card-header">
+          <h3>Últimos Informes</h3>
+        </div>
+        <div class="recent-card-body" id="recent-informes">
+          <p style="color: var(--color-text-muted); text-align: center;">
+            Cargando informes recientes...
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+
+  <script>
+    // Configurar navegación del sidebar
+    layout.setNav([
+      {label: 'Dashboard', icon: '📊', href: 'dashboard.html', active: true},
+      {label: 'Nuevo Informe', icon: '📝', href: 'nuevo-informe.html'},
+      {label: 'Pacientes', icon: '👥', href: 'pacientes.html'},
+      {label: 'Histórico', icon: '📋', href: 'historico.html'},
+      {label: 'Configuración', icon: '⚙️', href: 'configuracion.html'}
+    ]);
+
+    // Cargar datos del dashboard
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Mostrar nombre del usuario
+      const userName = layout.userName || 'Doctor';
+      document.getElementById('user-name').textContent = userName;
+
+      // Mostrar fecha actual
+      const today = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-date').textContent = 
+        today.toLocaleDateString('es-ES', options);
+
+      // Cargar estadísticas (sin inventar datos)
+      try {
+        const informes = await api.getInformes({limit: 100});
+        const pacientes = await api.getPacientes({limit: 100});
+
+        // Contar estados (solo con datos reales)
+        let borradores = 0;
+        let enviados = 0;
+        if (informes.data && Array.isArray(informes.data)) {
+          borradores = informes.data.filter(i => i.estado === 'borrador').length;
+          enviados = informes.data.filter(i => i.estado === 'enviado').length;
+        }
+
+        document.getElementById('total-pacientes').textContent = 
+          pacientes.total || pacientes.data?.length || 0;
+        document.getElementById('total-informes').textContent = 
+          informes.total || informes.data?.length || 0;
+        document.getElementById('pendientes').textContent = borradores;
+        document.getElementById('enviados').textContent = enviados;
+
+        // Mostrar informes recientes
+        loadRecentInformes(informes.data || []);
+      } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+        // No mostrar datos si hay error (mejor que inventar)
+        document.getElementById('recent-informes').innerHTML = `
+          <p style="color: var(--color-error);">No se pudieron cargar los informes.</p>
+        `;
+      }
+    });
+
+    function loadRecentInformes(informes) {
+      const container = document.getElementById('recent-informes');
+      
+      if (!informes || informes.length === 0) {
+        container.innerHTML = `
+          <p style="color: var(--color-text-muted); text-align: center;">
+            No hay informes aún. <a href="nuevo-informe.html">Crear uno</a>
+          </p>
+        `;
+        return;
+      }
+
+      // Mostrar últimos 5
+      const recientes = informes.slice(0, 5);
+      container.innerHTML = recientes.map(informe => {
+        const fecha = new Date(informe.created_at);
+        const fechaFormato = fecha.toLocaleDateString('es-ES');
+        const estadoBadge = getBadgeClase(informe.estado);
+
+        return `
+          <div class="recent-item">
+            <div>
+              <div class="recent-item-title">
+                ${informe.paciente?.nombre || 'Paciente'} ${informe.paciente?.apellido || ''}
+              </div>
+              <div class="recent-item-date">${fechaFormato}</div>
+            </div>
+            <span class="badge ${estadoBadge}">${informe.estado}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getBadgeClase(estado) {
+      switch(estado) {
+        case 'borrador': return 'badge-draft';
+        case 'finalizado': return 'badge-final';
+        case 'enviado': return 'badge-sent';
+        default: return '';
+      }
+    }
+  </script>
+</body>
+</html>

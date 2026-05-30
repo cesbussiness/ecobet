@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración — Ecosonografía</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .settings-container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .settings-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+
+    .settings-card h2 {
+      border-bottom: 2px solid var(--color-border);
+      padding-bottom: var(--space-lg);
+      margin-top: 0;
+    }
+
+    .profile-section {
+      text-align: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .profile-avatar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: var(--color-white);
+      font-size: 2.5rem;
+      margin-bottom: var(--space-lg);
+    }
+
+    .profile-info {
+      margin-bottom: var(--space-lg);
+    }
+
+    .profile-name {
+      font-size: var(--size-lg);
+      font-weight: 600;
+      color: var(--color-text-dark);
+    }
+
+    .profile-role {
+      color: var(--color-text-muted);
+      font-size: var(--size-sm);
+    }
+
+    .success-message {
+      background: rgba(5, 150, 105, 0.1);
+      border: 1px solid var(--color-success);
+      color: var(--color-success);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-lg);
+      display: none;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .password-requirements {
+      background: var(--color-bg-light);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      font-size: var(--size-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-md);
+      list-style: none;
+    }
+
+    .password-requirements li {
+      padding: var(--space-sm) 0;
+    }
+
+    .password-requirements li::before {
+      content: '✓ ';
+      color: var(--color-success);
+      margin-right: var(--space-sm);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: var(--space-md);
+      justify-content: flex-end;
+      margin-top: var(--space-lg);
+    }
+
+    .danger-zone {
+      background: rgba(220, 38, 38, 0.05);
+      border: 1px solid var(--color-error);
+      color: var(--color-error);
+    }
+
+    /* Mobile */
+    @media (max-width: 479px) {
+      .settings-container {
+        margin: 0;
+      }
+
+      .settings-card {
+        padding: var(--space-md);
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="with-sidebar">
+  <div class="content">
+    <div class="settings-container">
+      <h1 style="margin-bottom: var(--space-lg);">Configuración</h1>
+
+      <!-- Perfil -->
+      <div class="settings-card">
+        <h2>Mi Perfil</h2>
+
+        <div class="profile-section">
+          <div class="profile-avatar">👨‍⚕️</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profile-name">Dr. Usuario</div>
+            <div class="profile-role" id="profile-role">Médico</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info" style="margin-bottom: var(--space-lg);">
+          <p style="margin: 0;">
+            Tu cuenta está administrada por el sistema. 
+            Para cambios de datos personales, contacta al administrador.
+          </p>
+        </div>
+      </div>
+
+      <!-- Cambio de contraseña -->
+      <div class="settings-card">
+        <h2>Cambiar Contraseña</h2>
+
+        <div class="success-message" id="password-success">
+          ✓ Contraseña cambiada correctamente
+        </div>
+
+        <form id="password-form">
+          <div class="form-group">
+            <label for="current-password">Contraseña Actual *</label>
+            <input 
+              type="password" 
+              id="current-password" 
+              required
+              autocomplete="current-password"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="new-password">Nueva Contraseña *</label>
+            <input 
+              type="password" 
+              id="new-password" 
+              required
+              autocomplete="new-password"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirmar Contraseña *</label>
+            <input 
+              type="password" 
+              id="confirm-password" 
+              required
+              autocomplete="new-password"
+            >
+          </div>
+
+          <ul class="password-requirements">
+            <li>Mínimo 8 caracteres</li>
+            <li>Una mayúscula</li>
+            <li>Un número</li>
+            <li>Un carácter especial ($, !, @, etc.)</li>
+          </ul>
+
+          <div class="form-actions">
+            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Seguridad -->
+      <div class="settings-card">
+        <h2>Seguridad</h2>
+
+        <div class="form-group">
+          <label>Última sesión activa:</label>
+          <p id="last-login" style="color: var(--color-text-muted);">
+            Cargando información...
+          </p>
+        </div>
+
+        <div class="alert alert-info" style="margin-bottom: var(--space-lg);">
+          <p style="margin: 0;">
+            ⚠️ Nunca compartas tu contraseña. El sistema nunca te la pedirá 
+            por email o teléfono.
+          </p>
+        </div>
+      </div>
+
+      <!-- Zona de riesgo -->
+      <div class="settings-card danger-zone">
+        <h2>Zona de Riesgo</h2>
+
+        <p style="margin-bottom: var(--space-lg);">
+          Estas acciones son permanentes y no pueden deshacerse.
+        </p>
+
+        <button type="button" class="btn btn-error btn-block" id="logout-all-btn">
+          🚪 Cerrar todas las sesiones
+        </button>
+      </div>
+
+      <div style="text-align: center; margin-top: var(--space-xl); color: var(--color-text-muted); font-size: var(--size-sm);">
+        <p>Ecosonografía v1.0 | © 2026 Todos los derechos reservados</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+
+  <script>
+    layout.setNav([
+      {label: 'Dashboard', icon: '📊', href: 'dashboard.html'},
+      {label: 'Nuevo Informe', icon: '📝', href: 'nuevo-informe.html'},
+      {label: 'Pacientes', icon: '👥', href: 'pacientes.html'},
+      {label: 'Histórico', icon: '📋', href: 'historico.html'},
+      {label: 'Configuración', icon: '⚙️', href: 'configuracion.html', active: true}
+    ]);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProfileInfo();
+      setupPasswordForm();
+      setupLogoutAll();
+    });
+
+    function loadProfileInfo() {
+      const name = layout.userName || 'Usuario';
+      const role = layout.userRole || 'Médico';
+      
+      document.getElementById('profile-name').textContent = name;
+      document.getElementById('profile-role').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+      
+      // Fecha de última sesión (simulada)
+      const today = new Date();
+      document.getElementById('last-login').textContent = 
+        `${today.toLocaleDateString('es-ES')} a las ${today.toLocaleTimeString('es-ES')}`;
+    }
+
+    function setupPasswordForm() {
+      document.getElementById('password-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const current = document.getElementById('current-password').value;
+        const newPass = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+
+        // Validar
+        if (newPass !== confirm) {
+          alert('Las contraseñas no coinciden');
+          return;
+        }
+
+        if (!validatePassword(newPass)) {
+          alert('La contraseña no cumple con los requisitos mínimos');
+          return;
+        }
+
+        try {
+          await api.changePassword(current, newPass);
+          document.getElementById('password-success').classList.add('show');
+          document.getElementById('password-form').reset();
+          
+          setTimeout(() => {
+            document.getElementById('password-success').classList.remove('show');
+          }, 3000);
+        } catch (error) {
+          alert('Error: ' + error.message);
+        }
+      });
+    }
+
+    function validatePassword(password) {
+      // Mínimo 8, una mayúscula, un número, un especial
+      const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[$!@])[A-Za-z\d$!@]{8,}$/;
+      return regex.test(password);
+    }
+
+    function setupLogoutAll() {
+      document.getElementById('logout-all-btn').addEventListener('click', () => {
+        if (confirm('¿Estás seguro? Se cerrarán todas tus sesiones.')) {
+          localStorage.removeItem('auth-token');
+          localStorage.removeItem('user-role');
+          localStorage.removeItem('user-name');
+          window.location.href = '../pages/login.html';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

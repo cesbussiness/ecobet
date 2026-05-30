@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nuevo Informe — Ecosonografía</title>
+  <link rel="stylesheet" href="../css/estilos.css">
+  <style>
+    .informe-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .informe-header {
+      margin-bottom: var(--space-2xl);
+    }
+
+    .informe-header h1 {
+      margin-bottom: var(--space-md);
+    }
+
+    .steps {
+      display: flex;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-2xl);
+      position: relative;
+    }
+
+    .step {
+      flex: 1;
+      text-align: center;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--color-border);
+      color: var(--color-text-muted);
+      font-weight: 700;
+      margin-bottom: var(--space-sm);
+      transition: all var(--transition-base);
+    }
+
+    .step.active .step-number {
+      background: var(--color-primary);
+      color: var(--color-white);
+    }
+
+    .step.completed .step-number {
+      background: var(--color-success);
+      color: var(--color-white);
+    }
+
+    .step-label {
+      font-size: var(--size-sm);
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
+
+    .step.active .step-label {
+      color: var(--color-primary);
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+      animation: slideInUp var(--transition-base) ease-out;
+    }
+
+    .form-card {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+
+    .dictation-area {
+      background: var(--color-bg-light);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      text-align: center;
+      margin-bottom: var(--space-lg);
+      transition: all var(--transition-base);
+    }
+
+    .dictation-area.listening {
+      border-color: var(--color-info);
+      background: rgba(8, 145, 178, 0.05);
+      box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+    }
+
+    .dictation-icon {
+      font-size: 3rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .dictation-icon.listening {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .dictation-text {
+      font-size: var(--size-base);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .voice-controls {
+      display: flex;
+      gap: var(--space-md);
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-voice {
+      padding: var(--space-md) var(--space-lg);
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-start {
+      background: var(--color-info);
+      color: var(--color-white);
+    }
+
+    .btn-start:hover {
+      background: var(--color-primary);
+    }
+
+    .btn-stop {
+      background: var(--color-error);
+      color: var(--color-white);
+    }
+
+    .btn-clear {
+      background: var(--color-warning);
+      color: var(--color-white);
+    }
+
+    .transcription-display {
+      background: var(--color-white);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+      min-height: 100px;
+      color: var(--color-text-main);
+      line-height: var(--line-height-loose);
+      word-wrap: break-word;
+    }
+
+    .processing-indicator {
+      display: none;
+      padding: var(--space-lg);
+      background: rgba(8, 145, 178, 0.1);
+      border: 1px solid var(--color-info);
+      border-radius: var(--radius-md);
+      color: var(--color-info);
+      text-align: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .processing-indicator.show {
+      display: block;
+      animation: fadeIn var(--transition-base);
+    }
+
+    .ai-result {
+      background: var(--color-bg-light);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-lg);
+    }
+
+    .ai-section {
+      margin-bottom: var(--space-lg);
+    }
+
+    .ai-section h3 {
+      margin-bottom: var(--space-md);
+      color: var(--color-primary);
+    }
+
+    .ai-content {
+      background: var(--color-white);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      border-left: 4px solid var(--color-primary);
+      line-height: var(--line-height-loose);
+    }
+
+    .advertencias {
+      background: rgba(217, 119, 6, 0.1);
+      border-left-color: var(--color-warning);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: var(--space-md);
+      justify-content: flex-end;
+      margin-top: var(--space-xl);
+    }
+
+    .browser-support-warning {
+      background: rgba(220, 38, 38, 0.1);
+      border: 1px solid var(--color-error);
+      color: var(--color-error);
+      padding: var(--space-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-lg);
+      display: none;
+    }
+
+    .browser-support-warning.show {
+      display: block;
+    }
+
+    /* Mobile (< 480px) */
+    @media (max-width: 479px) {
+      .steps {
+        gap: var(--space-md);
+        flex-wrap: wrap;
+      }
+
+      .step {
+        flex: 0 0 calc(50% - var(--space-sm));
+      }
+
+      .form-card {
+        padding: var(--space-md);
+      }
+
+      .voice-controls {
+        flex-direction: column;
+      }
+
+      .btn-voice {
+        width: 100%;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="with-sidebar">
+  <div class="content">
+    <div class="informe-container">
+      <div class="informe-header">
+        <h1>Crear Nuevo Informe</h1>
+        <p>Sigue los pasos para crear y procesar un informe de ecosonografía</p>
+      </div>
+
+      <!-- Pasos del formulario -->
+      <div class="steps">
+        <div class="step active" id="step-1">
+          <div class="step-number">1</div>
+          <div class="step-label">Paciente</div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-number">2</div>
+          <div class="step-label">Dictado</div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-number">3</div>
+          <div class="step-label">Procesamiento</div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="step-number">4</div>
+          <div class="step-label">Revisión</div>
+        </div>
+      </div>
+
+      <form id="informe-form">
+        <!-- PASO 1: Seleccionar paciente -->
+        <section class="section active" id="section-1">
+          <div class="form-card">
+            <h2>Seleccionar Paciente</h2>
+            
+            <div class="form-group">
+              <label for="paciente-id">Paciente *</label>
+              <select id="paciente-id" required>
+                <option value="">-- Seleccionar paciente --</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>O crear uno nuevo:</label>
+              <a href="pacientes.html" class="btn btn-secondary">
+                ➕ Nuevo Paciente
+              </a>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-primary" onclick="goToStep(2)">
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PASO 2: Dictado por voz -->
+        <section class="section" id="section-2">
+          <div class="form-card">
+            <h2>Dictado por Voz</h2>
+            <p>Dicta los hallazgos del examen de ecosonografía. Puedes editar el texto antes de procesarlo.</p>
+
+            <div class="browser-support-warning" id="browser-warning">
+              ⚠️ Tu navegador no soporta reconocimiento de voz. Por favor usa Chrome, Edge o Safari.
+            </div>
+
+            <div class="dictation-area" id="dictation-area">
+              <div class="dictation-icon" id="dictation-icon">🎤</div>
+              <p class="dictation-text">
+                Haz clic en "Iniciar" para comenzar el dictado
+              </p>
+              <div class="voice-controls">
+                <button type="button" class="btn-voice btn-start" id="start-btn">
+                  🎤 Iniciar Dictado
+                </button>
+                <button type="button" class="btn-voice btn-stop" id="stop-btn" style="display:none;">
+                  ⏹️ Detener
+                </button>
+                <button type="button" class="btn-voice btn-clear" id="clear-btn">
+                  🔄 Limpiar
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="dictation-text">Texto Transcrito</label>
+              <textarea 
+                id="dictation-text" 
+                placeholder="El texto del dictado aparecerá aquí y puedes editarlo antes de procesar..."
+              ></textarea>
+              <small style="color: var(--color-text-muted); margin-top: var(--space-sm); display: block;">
+                Edita el texto aquí si es necesario (correcciones médicas, términos específicos, etc.)
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(1)">
+                ← Anterior
+              </button>
+              <button type="button" class="btn btn-primary" onclick="goToStep(3)">
+                Procesar con IA →
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PASO 3: Procesamiento con IA -->
+        <section class="section" id="section-3">
+          <div class="form-card">
+            <h2>Procesamiento con IA</h2>
+            <p>Claude procesará el dictado para estructurar el informe médico.</p>
+
+            <div class="processing-indicator" id="processing">
+              <div style="font-size: 1.5rem; margin-bottom: var(--space-md);">⏳</div>
+              <div>Procesando con Claude...</div>
+            </div>
+
+            <div id="ai-results"></div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(2)">
+                ← Editar Dictado
+              </button>
+              <button type="button" class="btn btn-primary" onclick="goToStep(4)">
+                Ver Revisión →
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PASO 4: Revisión y envío -->
+        <section class="section" id="section-4">
+          <div class="form-card">
+            <h2>Revisión Final</h2>
+            <p>Revisa el informe procesado. Puedes guardar como borrador o finalizarlo.</p>
+
+            <div id="final-review"></div>
+
+            <div class="form-group">
+              <label for="notas-medico">Notas adicionales del médico</label>
+              <textarea 
+                id="notas-medico" 
+                placeholder="Observaciones, contexto clínico, o notas adicionales..."
+              ></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="goToStep(3)">
+                ← Procesar Nuevamente
+              </button>
+              <button type="button" class="btn btn-secondary" id="guardar-borrador">
+                💾 Guardar como Borrador
+              </button>
+              <button type="button" class="btn btn-primary" id="finalizar-informe">
+                ✅ Finalizar Informe
+              </button>
+            </div>
+          </div>
+        </section>
+      </form>
+    </div>
+  </div>
+
+  <script src="../js/api.js"></script>
+  <script src="../js/layout.js"></script>
+
+  <script>
+    let recognition;
+    let isListening = false;
+    let aiResult = null;
+    let currentStep = 1;
+
+    // Configurar navegación del sidebar
+    layout.setNav([
+      {label: 'Dashboard', icon: '📊', href: 'dashboard.html'},
+      {label: 'Nuevo Informe', icon: '📝', href: 'nuevo-informe.html', active: true},
+      {label: 'Pacientes', icon: '👥', href: 'pacientes.html'},
+      {label: 'Histórico', icon: '📋', href: 'historico.html'},
+      {label: 'Configuración', icon: '⚙️', href: 'configuracion.html'}
+    ]);
+
+    // Inicializar Web Speech API
+    function initVoiceRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        document.getElementById('browser-warning').classList.add('show');
+        document.getElementById('start-btn').disabled = true;
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'es-ES';
+
+      recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('dictation-area').classList.add('listening');
+        document.getElementById('dictation-icon').classList.add('listening');
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('stop-btn').style.display = 'inline-block';
+      };
+
+      recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        document.getElementById('dictation-text').value = transcript;
+      };
+
+      recognition.onend = () => {
+        isListening = false;
+        document.getElementById('dictation-area').classList.remove('listening');
+        document.getElementById('dictation-icon').classList.remove('listening');
+        document.getElementById('start-btn').style.display = 'inline-block';
+        document.getElementById('stop-btn').style.display = 'none';
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+        alert('Error en reconocimiento de voz: ' + event.error);
+      };
+    }
+
+    // Botones de voz
+    document.getElementById('start-btn').addEventListener('click', () => {
+      if (recognition && !isListening) {
+        recognition.start();
+      }
+    });
+
+    document.getElementById('stop-btn').addEventListener('click', () => {
+      if (recognition && isListening) {
+        recognition.stop();
+      }
+    });
+
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      document.getElementById('dictation-text').value = '';
+    });
+
+    // Cargar pacientes
+    document.addEventListener('DOMContentLoaded', async () => {
+      initVoiceRecognition();
+      loadPacientes();
+      setupFormHandlers();
+    });
+
+    async function loadPacientes() {
+      try {
+        const response = await api.getPacientes({limit: 1000});
+        const select = document.getElementById('paciente-id');
+        
+        if (response.data && Array.isArray(response.data)) {
+          response.data.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = `${p.nombre} ${p.apellido} (${p.cedula})`;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Error cargando pacientes:', error);
+      }
+    }
+
+    function goToStep(step) {
+      // Validar paso anterior
+      if (step === 2 && !document.getElementById('paciente-id').value) {
+        alert('Por favor selecciona un paciente');
+        return;
+      }
+
+      if (step === 3 && !document.getElementById('dictation-text').value.trim()) {
+        alert('Por favor dicta algo o ingresa texto');
+        return;
+      }
+
+      currentStep = step;
+      updateSteps();
+      updateSections();
+
+      if (step === 3) {
+        processWithAI();
+      }
+    }
+
+    function updateSteps() {
+      document.querySelectorAll('.step').forEach((s, i) => {
+        const stepNum = i + 1;
+        s.classList.remove('active', 'completed');
+        
+        if (stepNum === currentStep) {
+          s.classList.add('active');
+        } else if (stepNum < currentStep) {
+          s.classList.add('completed');
+        }
+      });
+    }
+
+    function updateSections() {
+      document.querySelectorAll('section.section').forEach((s, i) => {
+        const sectionNum = i + 1;
+        s.classList.toggle('active', sectionNum === currentStep);
+      });
+    }
+
+    async function processWithAI() {
+      const texto = document.getElementById('dictation-text').value.trim();
+      
+      if (!texto) {
+        alert('No hay texto para procesar');
+        goToStep(2);
+        return;
+      }
+
+      document.getElementById('processing').classList.add('show');
+      document.getElementById('ai-results').innerHTML = '';
+
+      try {
+        const result = await api.processReportWithAI(texto);
+        aiResult = result;
+
+        // Mostrar resultado (sin inventar; solo lo que devuelve Claude)
+        const html = `
+          <div class="ai-result">
+            ${result.hallazgos ? `
+              <div class="ai-section">
+                <h3>Hallazgos</h3>
+                <div class="ai-content">${escapeHtml(result.hallazgos)}</div>
+              </div>
+            ` : ''}
+            ${result.recomendaciones ? `
+              <div class="ai-section">
+                <h3>Recomendaciones</h3>
+                <div class="ai-content">${escapeHtml(result.recomendaciones)}</div>
+              </div>
+            ` : ''}
+            ${result.advertencias ? `
+              <div class="ai-section">
+                <h3>⚠️ Advertencias</h3>
+                <div class="ai-content advertencias">${escapeHtml(result.advertencias)}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        document.getElementById('ai-results').innerHTML = html;
+      } catch (error) {
+        console.error('Error procesando con IA:', error);
+        document.getElementById('ai-results').innerHTML = `
+          <div class="alert alert-error">
+            Error al procesar: ${error.message || 'Error desconocido'}
+          </div>
+        `;
+      } finally {
+        document.getElementById('processing').classList.remove('show');
+      }
+    }
+
+    function setupFormHandlers() {
+      document.getElementById('guardar-borrador').addEventListener('click', async () => {
+        await guardarInforme('borrador');
+      });
+
+      document.getElementById('finalizar-informe').addEventListener('click', async () => {
+        await guardarInforme('finalizado');
+      });
+    }
+
+    async function guardarInforme(estado) {
+      const pacienteId = document.getElementById('paciente-id').value;
+      const textoOriginal = document.getElementById('dictation-text').value;
+      const notasMedico = document.getElementById('notas-medico').value;
+
+      if (!pacienteId || !textoOriginal) {
+        alert('Faltan datos requeridos');
+        return;
+      }
+
+      try {
+        const data = {
+          pacienteId,
+          textoOriginal,
+          hallazgos: aiResult?.hallazgos || '',
+          recomendaciones: aiResult?.recomendaciones || '',
+          advertencias: aiResult?.advertencias || '',
+          notasMedico,
+          estado
+        };
+
+        const result = await api.createInforme(data);
+        alert(`Informe ${estado} guardado correctamente`);
+        window.location.href = 'dashboard.html';
+      } catch (error) {
+        console.error('Error guardando:', error);
+        alert(`Error al guardar: ${error.message}`);
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
