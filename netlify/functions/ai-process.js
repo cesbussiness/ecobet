@@ -3,7 +3,7 @@
  * Usa Anthropic Claude API para generar informes ecosonográficos
  */
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.anthropic_api_key;
 
 exports.handler = async (event) => {
   const headers = {
@@ -20,9 +20,11 @@ exports.handler = async (event) => {
 
   try {
     console.log('🎬 AI-Process iniciado');
+    console.log('API Key disponible:', !!ANTHROPIC_API_KEY);
 
     if (!ANTHROPIC_API_KEY) {
       console.error('❌ ANTHROPIC_API_KEY no configurada');
+      console.error('Variables de entorno:', Object.keys(process.env).filter(k => k.toLowerCase().includes('anthropic')));
       return {
         statusCode: 500,
         headers,
@@ -98,6 +100,8 @@ Sé preciso, profesional y basa todo en lo que escribió el médico.`;
       })
     });
 
+    console.log('📊 Claude response status:', claudeResponse.status);
+
     if (!claudeResponse.ok) {
       const errorData = await claudeResponse.text();
       console.error('❌ Claude error:', claudeResponse.status);
@@ -108,7 +112,7 @@ Sé preciso, profesional y basa todo en lo que escribió el médico.`;
         headers,
         body: JSON.stringify({
           error: `Claude API error: ${claudeResponse.status}`,
-          analisis: `❌ Error de API: ${claudeResponse.status}`
+          analisis: `❌ Error de API Claude: ${claudeResponse.status}`
         })
       };
     }
