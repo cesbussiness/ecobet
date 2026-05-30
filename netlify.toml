@@ -30,6 +30,4 @@
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
 
-# Excluir respaldos de build
-[context.production]
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- _respaldos/"
+# No hay ignored patterns - deploy siempre
