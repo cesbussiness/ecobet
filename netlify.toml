@@ -1,0 +1,67 @@
+# =====================================================================
+# Configuración Netlify — Sistema de Informes de Ecosonografía
+# Cada microservicio es una Netlify Function independiente.
+# =====================================================================
+
+[build]
+  publish = "frontend"
+  functions = "netlify/functions"
+  # La carpeta _respaldos/ vive en la raíz (fuera de "frontend") y NO se publica
+  # ni se compila. Solo se versiona en Git como copia de trabajo.
+
+# Las funciones se empaquetan desde services/*/src/handler.js
+# Para Netlify, copia cada handler.js a netlify/functions/<nombre>.js
+# (ver scripts/build-functions.sh) o usa la estructura de monorepo.
+
+[functions]
+  node_bundler = "esbuild"
+
+# ---------------------------------------------------------------------
+# Rutas limpias hacia cada microservicio (/api/<servicio>)
+# ---------------------------------------------------------------------
+[[redirects]]
+  from = "/api/auth"
+  to = "/.netlify/functions/auth"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai/process-report"
+  to = "/.netlify/functions/ai-process"
+  status = 200
+
+[[redirects]]
+  from = "/api/email/send"
+  to = "/.netlify/functions/email-send"
+  status = 200
+
+[[redirects]]
+  from = "/api/pdf/generate"
+  to = "/.netlify/functions/pdf-generate"
+  status = 200
+
+[[redirects]]
+  from = "/api/patients/*"
+  to = "/.netlify/functions/patients"
+  status = 200
+
+[[redirects]]
+  from = "/api/reports/*"
+  to = "/.netlify/functions/reports"
+  status = 200
+
+# SPA fallback para páginas del frontend
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# ---------------------------------------------------------------------
+# Cabeceras de seguridad
+# ---------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "microphone=(self)"
