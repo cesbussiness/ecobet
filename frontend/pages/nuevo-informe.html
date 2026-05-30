@@ -511,6 +511,14 @@
 
     // Cargar pacientes
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('✅ Página Nuevo Informe cargada');
+      
+      // Init layout
+      if (typeof layout !== 'undefined') {
+        layout.init();
+        console.log('✅ Layout inicializado');
+      }
+      
       initVoiceRecognition();
       loadPacientes();
       setupFormHandlers();
@@ -518,19 +526,37 @@
 
     async function loadPacientes() {
       try {
-        const response = await api.getPacientes({limit: 1000});
-        const select = document.getElementById('paciente-id');
+        console.log('📥 Cargando pacientes...');
         
-        if (response.data && Array.isArray(response.data)) {
-          response.data.forEach(p => {
-            const option = document.createElement('option');
-            option.value = p.id;
-            option.textContent = `${p.nombre} ${p.apellido} (${p.cedula})`;
-            select.appendChild(option);
-          });
+        let pacientes = [];
+        
+        // Intentar API
+        try {
+          const response = await api.getPacientes({limit: 1000});
+          if (response.data) pacientes = response.data;
+          console.log('✅ API: ' + pacientes.length);
+        } catch (e) {
+          console.log('⚠️ API error, usando localStorage');
         }
+        
+        // Si no hay datos, usar localStorage
+        if (pacientes.length === 0 && typeof storage !== 'undefined') {
+          pacientes = storage.getPacientes();
+          console.log('📚 localStorage: ' + pacientes.length);
+        }
+        
+        const select = document.getElementById('paciente-id');
+        pacientes.forEach(p => {
+          const option = document.createElement('option');
+          option.value = p.id;
+          option.textContent = `${p.nombre} ${p.apellido || ''} (${p.cedula})`;
+          select.appendChild(option);
+        });
+        
+        console.log('✅ Pacientes cargados en select');
+        
       } catch (error) {
-        console.error('Error cargando pacientes:', error);
+        console.error('❌ Error:', error);
       }
     }
 
