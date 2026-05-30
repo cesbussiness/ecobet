@@ -6,7 +6,6 @@
 [build]
   publish = "frontend"
   functions = "netlify/functions"
-  command = "bash scripts-build-functions.sh"
 
 # Variables de entorno (configurar en Netlify Site settings)
 [build.environment]
