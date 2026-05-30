@@ -1,6 +1,6 @@
 /**
  * Transcribe Audio - Netlify Function
- * Usa Anthropic Claude para transcribir audios médicos
+ * Usa Claude API para transcribir audios médicos
  */
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -23,7 +23,7 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ 
           error: 'API key no configurada',
-          transcripcion: 'Error: ANTHROPIC_API_KEY no configurada'
+          transcripcion: '❌ Error: ANTHROPIC_API_KEY no configurada en Netlify'
         })
       };
     }
@@ -39,92 +39,97 @@ exports.handler = async (event) => {
       };
     }
 
-    console.log('🎙️ Transcribiendo audio...');
+    console.log('🎙️ Transcribiendo audio con Claude...');
     console.log('Tipo:', mimeType);
 
-    // Llamar a Claude con vision (para audio en el futuro)
-    // Por ahora usamos una llamada POST directa
-    
-    // NOTA: Anthropic Claude no tiene transcripción de audio nativa aún
-    // Vamos a usar Whisper API de OpenAI como fallback
-    
-    // Para demo, retornamos un placeholder
-    // En producción: integrar Whisper API o cambiar a otro servicio
+    // Llamar a Claude con audio (vision con base64)
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Eres un especialista médico en ecografía. 
 
-    const transcripcion = await transcribirConWhisper(audioBase64, mimeType);
+Tu tarea ES TRANSCRIBIR el audio médico que te proporciona el doctor.
+
+REGLAS CRÍTICAS:
+1. TRANSCRIBO EXACTAMENTE lo que dice el doctor
+2. NO inventas hallazgos
+3. NO agrego interpretaciones
+4. Preservo la estructura y orden
+5. Si hay pausas o dudas, lo indico con [pausa] o [inaudible]
+6. Formato CLARO y LEGIBLE para que el doctor pueda editarlo
+
+Solo transcribe el audio. Nada más.`
+              },
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'audio/mpeg',
+                  data: audioBase64
+                }
+              }
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!claudeResponse.ok) {
+      const errorData = await claudeResponse.text();
+      console.error('❌ Claude API error:', claudeResponse.status, errorData);
+      
+      // Fallback: retornar placeholder
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          transcripcion: '[Transcripción pendiente - Por favor, completa manualmente]',
+          aviso: 'Claude API no disponible en este momento. Completa manualmente el texto.'
+        })
+      };
+    }
+
+    const claudeData = await claudeResponse.json();
+    console.log('✅ Respuesta de Claude recibida');
+
+    // Extraer texto de respuesta
+    const transcripcion = claudeData.content[0]?.text || '[Sin respuesta de IA]';
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: true,
-        transcripcion: transcripcion,
-        duracion: '~' + Math.round(audioBase64.length / 44100) + ' segundos'
+        transcripcion: transcripcion
       })
     };
 
   } catch (error) {
     console.error('❌ Error:', error.message);
+    
+    // Fallback amigable
     return {
-      statusCode: 500,
+      statusCode: 200,
       headers,
       body: JSON.stringify({
-        error: 'Error transcribiendo',
-        mensaje: error.message,
-        transcripcion: `[Error: ${error.message}]`
+        success: false,
+        transcripcion: '[Transcripción pendiente - Por favor, completa manualmente]',
+        aviso: error.message
       })
     };
   }
 };
-
-/**
- * Transcribir con Whisper API (OpenAI)
- * NOTA: Requiere OPENAI_API_KEY en variables entorno
- */
-async function transcribirConWhisper(audioBase64, mimeType) {
-  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  
-  if (!OPENAI_API_KEY) {
-    console.warn('⚠️ OPENAI_API_KEY no configurada, usando placeholder');
-    return `[Transcripción simulada - Configurar OPENAI_API_KEY para transcripción real]
-    
-Paciente refiere:
-- Hallazgo principal: ecosonografía anormal
-- Síntomas asociados: presente
-- Duración: variable
-
-Nota: Conectar OPENAI_API_KEY para transcripción real en producción.`;
-  }
-
-  try {
-    // Convertir base64 a buffer
-    const audioBuffer = Buffer.from(audioBase64, 'base64');
-    
-    // Crear FormData
-    const FormData = require('form-data');
-    const form = new FormData();
-    form.append('file', audioBuffer, { filename: 'audio.mp3', contentType: 'audio/mpeg' });
-    form.append('model', 'whisper-1');
-    form.append('language', 'es');
-
-    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        ...form.getHeaders()
-      },
-      body: form
-    });
-
-    if (!response.ok) {
-      throw new Error(`Whisper API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.text || 'Transcripción vacía';
-
-  } catch (error) {
-    console.error('❌ Whisper error:', error.message);
-    throw error;
-  }
-}

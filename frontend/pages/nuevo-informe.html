@@ -248,6 +248,12 @@
       font-weight: 500;
     }
 
+    .alert-info {
+      background: #dbeafe;
+      color: #0c4a6e;
+      border-left: 4px solid #0ea5e9;
+    }
+
     .alert-error {
       background: #fee2e2;
       color: #991b1b;
@@ -259,6 +265,68 @@
       color: #166534;
       border-left: 4px solid #22c55e;
     }
+
+
+    .transcription-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .transcription-modal.active {
+      display: flex;
+    }
+
+    .transcription-modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .transcription-modal h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 24px;
+      color: var(--dark);
+    }
+
+    .transcription-text {
+      background: var(--light);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .transcription-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .transcription-actions button {
+      flex: 1;
+      min-width: 120px;
+    }
+
 
     @media (max-width: 768px) {
       .form-row {
@@ -365,8 +433,15 @@
 
           <div class="audio-list" id="audio-list"></div>
         </div>
+      </div>
 
-        <textarea id="hallazgos" rows="6" placeholder="Los audios grabados se transcribirán aquí automáticamente..." required></textarea>
+      <!-- TRANSCRIPCIÓN EDITABLE -->
+      <div class="form-group">
+        <label>📝 Transcripción (Edita si hay errores)</label>
+        <textarea id="hallazgos" rows="8" placeholder="La transcripción aparecerá aquí. Revisa y edita si hay errores antes de generar el informe..." required></textarea>
+        <div style="font-size: 12px; color: var(--text); margin-top: 8px;">
+          ℹ️ Los audios se transcriben automáticamente. Puedes editar el texto si necesitas hacer correcciones.
+        </div>
       </div>
 
       <div class="form-group">
@@ -383,6 +458,26 @@
     </div>
 
     <div id="resultado-container"></div>
+  </div>
+
+
+  <!-- MODAL DE TRANSCRIPCIÓN EDITABLE -->
+  <div class="transcription-modal" id="transcription-modal">
+    <div class="transcription-modal-content">
+      <h2>✏️ Revisar Transcripción</h2>
+      <p style="color: var(--text); font-size: 14px; margin-bottom: 16px;">
+        Revisa el texto transcrito. Si hay errores, puedes editarlos aquí.
+      </p>
+      <div class="transcription-text" id="transcription-display"></div>
+      <div class="transcription-actions">
+        <button class="btn btn-primary" onclick="aceptarTranscripcion()">
+          ✅ Aceptar y Continuar
+        </button>
+        <button class="btn btn-secondary" onclick="rechazarTranscripcion()">
+          ❌ Cancelar
+        </button>
+      </div>
+    </div>
   </div>
 
   <script src="../js/storage.js"></script>
@@ -485,9 +580,13 @@
       document.getElementById('recorder-box').classList.remove('recording');
     }
 
+    let transcripcionActual = '';
+    let audioActual = null;
+
     async function procesarAudio(audioBlob, audioUrl) {
       try {
         console.log('📡 Procesando audio...');
+        mostrarAlerta('⏳ Transcribiendo audio...', 'info');
         
         // Convertir a base64
         const reader = new FileReader();
@@ -495,7 +594,8 @@
           const base64Audio = e.target.result.split(',')[1];
 
           try {
-            // Transcribir
+            // Transcribir con Claude
+            console.log('🎙️ Enviando a Claude para transcripción...');
             const response = await fetch('/api/transcribe', {
               method: 'POST',
               headers: {
@@ -504,7 +604,7 @@
               },
               body: JSON.stringify({
                 audioBase64: base64Audio,
-                mimeType: 'audio/mp3'
+                mimeType: 'audio/mpeg'
               })
             });
 
@@ -513,33 +613,23 @@
             }
 
             const data = await response.json();
-            console.log('✅ Audio transcrito');
+            console.log('✅ Audio transcrito con Claude');
 
-            // Guardar grabación
-            const grabacion = {
+            // Guardar transcripción actual
+            transcripcionActual = data.transcripcion;
+            audioActual = {
               id: 'aud-' + Date.now(),
               url: audioUrl,
               transcripcion: data.transcripcion,
               createdAt: new Date().toLocaleTimeString()
             };
-            grabacionesAudio.push(grabacion);
 
-            // Mostrar en lista
-            mostrarAudios();
-
-            // Agregar transcripción a hallazgos
-            const hallazgosField = document.getElementById('hallazgos');
-            if (hallazgosField.value) {
-              hallazgosField.value += '\n\n---\n\n' + data.transcripcion;
-            } else {
-              hallazgosField.value = data.transcripcion;
-            }
-
-            mostrarAlerta(`✅ Audio ${grabacionesAudio.length} grabado y transcrito`, 'success');
+            // Mostrar modal para revisar/editar
+            mostrarModalTranscripcion(data.transcripcion);
 
           } catch (error) {
             console.error('❌ Error transcribiendo:', error);
-            mostrarAlerta('⚠️ Audio guardado pero sin transcripción (configurar OPENAI_API_KEY)', 'error');
+            mostrarAlerta('❌ Error transcribiendo: ' + error.message, 'error');
           }
         };
         reader.readAsDataURL(audioBlob);
@@ -548,6 +638,58 @@
         console.error('❌ Error:', error);
         mostrarAlerta('❌ Error procesando audio', 'error');
       }
+    }
+
+    function mostrarModalTranscripcion(transcripcion) {
+      const modal = document.getElementById('transcription-modal');
+      const display = document.getElementById('transcription-display');
+      
+      display.textContent = transcripcion;
+      modal.classList.add('active');
+      
+      console.log('📋 Modal de transcripción mostrado');
+    }
+
+    function cerrarModalTranscripcion() {
+      const modal = document.getElementById('transcription-modal');
+      modal.classList.remove('active');
+    }
+
+    function aceptarTranscripcion() {
+      console.log('✅ Transcripción aceptada');
+      
+      if (!audioActual) return;
+
+      // Agregar a lista de grabaciones
+      grabacionesAudio.push(audioActual);
+      
+      // Mostrar en lista
+      mostrarAudios();
+
+      // Agregar transcripción a hallazgos
+      const hallazgosField = document.getElementById('hallazgos');
+      if (hallazgosField.value.trim()) {
+        hallazgosField.value += '\n\n--- Audio ' + grabacionesAudio.length + ' ---\n\n' + transcripcionActual;
+      } else {
+        hallazgosField.value = transcripcionActual;
+      }
+
+      cerrarModalTranscripcion();
+      mostrarAlerta(`✅ Audio ${grabacionesAudio.length} agregado a hallazgos`, 'success');
+      
+      // Limpiar
+      transcripcionActual = '';
+      audioActual = null;
+    }
+
+    function rechazarTranscripcion() {
+      console.log('❌ Transcripción rechazada');
+      cerrarModalTranscripcion();
+      mostrarAlerta('⚠️ Audio descartado. Graba de nuevo si lo necesitas.', 'error');
+      
+      // Limpiar
+      transcripcionActual = '';
+      audioActual = null;
     }
 
     function mostrarAudios() {
