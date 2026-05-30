@@ -93,26 +93,33 @@ class Layout {
   setupMediaQuery() {
     // En móvil, ocultar sidebar completamente con toggle button
     // En desktop, respetar preferencia de colapso
+    const self = this;  // Guardar this correctamente
     const mediaQuery = window.matchMedia('(max-width: 479px)');
+    
     const handleMediaChange = (e) => {
+      console.log('📱 Media query change:', e.matches ? 'MOBILE' : 'DESKTOP');
+      
       const sidebar = document.querySelector('.sidebar');
       const content = document.querySelector('.content');
       
       if (e.matches) {
         // Móvil pequeño (<480px): sidebar oculto por defecto
+        console.log('📱 Aplicando mobile-hidden...');
         sidebar?.classList.add('mobile-hidden');
         content?.classList.add('sidebar-mobile-hidden');
         
         // Crear botón hamburguesa si no existe
         if (!document.querySelector('.hamburger-menu')) {
-          this.createMobileToggle();
+          console.log('📱 Creando botón hamburguesa...');
+          self.createMobileToggle();
         }
       } else {
         // Desktop/tablet: usar estado guardado
+        console.log('🖥️ Modo desktop, removiendo mobile-hidden...');
         sidebar?.classList.remove('mobile-hidden');
         content?.classList.remove('sidebar-mobile-hidden');
         
-        if (this.sidebarCollapsed) {
+        if (self.sidebarCollapsed) {
           sidebar?.classList.add('collapsed');
           content?.classList.add('sidebar-collapsed');
         } else {
@@ -123,12 +130,12 @@ class Layout {
     };
     
     mediaQuery.addListener(handleMediaChange);
-    handleMediaChange(mediaQuery);
+    handleMediaChange(mediaQuery);  // Ejecutar inmediatamente
+    console.log('✅ setupMediaQuery configurado');
   }
 
   createMobileToggle() {
-    // Crear botón hamburguesa para móvil
-    // Esperar a que el sidebar exista
+    // Crear un header FIJO en móvil con el botón hamburguesa
     const sidebar = document.querySelector('.sidebar');
     if (!sidebar) {
       // Reintentar después de que se cree el sidebar
@@ -136,46 +143,85 @@ class Layout {
       return;
     }
 
-    const header = sidebar.querySelector('.sidebar-header');
-    if (!header) return;
-
     // No crear si ya existe
-    if (header.querySelector('.hamburger-menu')) return;
+    if (document.querySelector('.mobile-header')) return;
 
+    // Crear header fijo para móvil
+    const mobileHeader = document.createElement('div');
+    mobileHeader.className = 'mobile-header';
+    mobileHeader.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--color-bg-primary);
+      border-bottom: 1px solid var(--color-border);
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-md);
+      z-index: 500;
+    `;
+
+    // Botón hamburguesa
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'hamburger-menu';
     toggleBtn.innerHTML = '☰';
     toggleBtn.type = 'button';
     toggleBtn.setAttribute('aria-label', 'Abrir menú');
     toggleBtn.style.cssText = `
-      position: absolute;
-      left: var(--space-md);
-      top: 50%;
-      transform: translateY(-50%);
+      position: static;
+      transform: none;
+      left: auto;
+      top: auto;
+      display: flex;
     `;
     
     toggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const sidebar = document.querySelector('.sidebar');
-      sidebar?.classList.toggle('mobile-active');
+      const isActive = sidebar?.classList.toggle('mobile-active');
       
       // Crear overlay si no existe
       let overlay = document.querySelector('.sidebar-overlay');
       if (!overlay) {
         overlay = document.createElement('div');
-        overlay.className = 'sidebar-overlay active';
+        overlay.className = 'sidebar-overlay';
         document.body.appendChild(overlay);
         
         overlay.addEventListener('click', () => {
           sidebar?.classList.remove('mobile-active');
           overlay?.classList.remove('active');
         });
+      }
+      
+      if (isActive) {
+        overlay?.classList.add('active');
       } else {
-        overlay.classList.toggle('active');
+        overlay?.classList.remove('active');
       }
     });
 
-    header.insertBefore(toggleBtn, header.firstChild);
+    // Título en el header móvil
+    const title = document.createElement('span');
+    title.textContent = '🏥 Ecosonografía';
+    title.style.cssText = 'font-weight: 700; font-size: 1rem;';
+
+    // Armar el header
+    mobileHeader.appendChild(toggleBtn);
+    mobileHeader.appendChild(title);
+    
+    // Insertar al inicio del body
+    document.body.insertBefore(mobileHeader, document.body.firstChild);
+    
+    // Ajustar body y content para dejar espacio para el header móvil
+    const content = document.querySelector('.content');
+    if (content) {
+      content.style.paddingTop = '60px';
+    }
+    
+    console.log('✅ Mobile header creado');
   }
 
   setNav(items) {
