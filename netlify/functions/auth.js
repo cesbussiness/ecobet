@@ -6,17 +6,7 @@
 
 const crypto = require('crypto');
 
-// Simulación de base de datos (en producción usar Supabase)
-const users = {
-  admin: {
-    id: 'user-admin-001',
-    usuario: 'admin',
-    passwordHash: hashPassword('Ecos2026$Admin'),
-    role: 'admin',
-    nombre: 'Dr. Admin'
-  }
-};
-
+// ⚠️ IMPORTANTE: JWT_SECRET debe definirse ANTES de usarlo
 const JWT_SECRET = process.env.JWT_SECRET || 'cambiar-en-produccion-secret-key-123';
 
 /**
@@ -28,6 +18,17 @@ function hashPassword(password) {
     .update(password + JWT_SECRET)
     .digest('hex');
 }
+
+// Simulación de base de datos (en producción usar Supabase)
+const users = {
+  admin: {
+    id: 'user-admin-001',
+    usuario: 'admin',
+    passwordHash: hashPassword('Ecos2026$Admin'),
+    role: 'admin',
+    nombre: 'Dr. Admin'
+  }
+};
 
 /**
  * Generar JWT
@@ -99,7 +100,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}');
 
     // POST /api/auth — Login
-    if (event.httpMethod === 'POST' && event.path === '/.netlify/functions/auth') {
+    if (event.httpMethod === 'POST' && (event.path === '/.netlify/functions/auth' || event.path.endsWith('/auth'))) {
       const { usuario, password } = body;
 
       if (!usuario || !password) {
@@ -135,7 +136,7 @@ exports.handler = async (event) => {
     }
 
     // POST /api/auth/change-password — Cambiar contraseña
-    if (event.httpMethod === 'POST' && event.path === '/.netlify/functions/auth-change') {
+    if (event.httpMethod === 'POST' && (event.path === '/.netlify/functions/auth-change' || event.path.endsWith('/change-password'))) {
       const token = event.headers.authorization?.replace('Bearer ', '');
       
       if (!token) {
