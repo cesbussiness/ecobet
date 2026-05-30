@@ -585,59 +585,120 @@
 
     async function procesarAudio(audioBlob, audioUrl) {
       try {
-        console.log('📡 Procesando audio...');
-        mostrarAlerta('⏳ Transcribiendo audio...', 'info');
+        console.log('🎙️ Procesando audio...');
+        mostrarAlerta('⏳ Transcribiendo con reconocimiento de voz...', 'info');
         
-        // Convertir a base64
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64Audio = e.target.result.split(',')[1];
-
-          try {
-            // Transcribir con Claude
-            console.log('🎙️ Enviando a Claude para transcripción...');
-            const response = await fetch('/api/transcribe', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
-              },
-              body: JSON.stringify({
-                audioBase64: base64Audio,
-                mimeType: 'audio/mpeg'
-              })
-            });
-
-            if (!response.ok) {
-              throw new Error(`Error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('✅ Audio transcrito con Claude');
-
-            // Guardar transcripción actual
-            transcripcionActual = data.transcripcion;
-            audioActual = {
-              id: 'aud-' + Date.now(),
-              url: audioUrl,
-              transcripcion: data.transcripcion,
-              createdAt: new Date().toLocaleTimeString()
-            };
-
-            // Mostrar modal para revisar/editar
-            mostrarModalTranscripcion(data.transcripcion);
-
-          } catch (error) {
-            console.error('❌ Error transcribiendo:', error);
-            mostrarAlerta('❌ Error transcribiendo: ' + error.message, 'error');
-          }
-        };
-        reader.readAsDataURL(audioBlob);
+        // Usar Web Speech API para transcribir localmente
+        transcribirConWebSpeech(audioBlob, audioUrl);
 
       } catch (error) {
         console.error('❌ Error:', error);
         mostrarAlerta('❌ Error procesando audio', 'error');
       }
+    }
+
+    function transcribirConWebSpeech(audioBlob, audioUrl) {
+      // Crear AudioContext y decodificar audio
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target.result;
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          
+          // Decodificar audio
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+          
+          console.log('✅ Audio decodificado');
+          
+          // Usar API de reconocimiento de voz disponible en el navegador
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          
+          if (!SpeechRecognition) {
+            throw new Error('Web Speech API no disponible');
+          }
+          
+          const recognition = new SpeechRecognition();
+          recognition.lang = 'es-ES';
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          
+          let transcripcion = '';
+          let isFinal = false;
+          
+          recognition.onresult = (event) => {
+            let interimTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const transcript = event.results[i][0].transcript;
+              
+              if (event.results[i].isFinal) {
+                transcripcion += transcript + ' ';
+                isFinal = true;
+              } else {
+                interimTranscript += transcript;
+              }
+            }
+            
+            console.log('Interim:', interimTranscript);
+            console.log('Final:', transcripcion);
+          };
+          
+          recognition.onerror = (event) => {
+            console.error('Error en reconocimiento:', event.error);
+            mostrarAlerta('⚠️ Error en reconocimiento de voz: ' + event.error, 'error');
+          };
+          
+          recognition.onend = () => {
+            console.log('✅ Reconocimiento terminado');
+            
+            if (!transcripcion.trim()) {
+              mostrarAlerta('⚠️ No se capturó audio. Completa manualmente.', 'error');
+              
+              // Crear audio sin transcripción
+              audioActual = {
+                id: 'aud-' + Date.now(),
+                url: audioUrl,
+                transcripcion: '[Sin transcripción - completa manualmente]',
+                createdAt: new Date().toLocaleTimeString()
+              };
+              
+              mostrarModalTranscripcion('[Sin transcripción - completa manualmente]');
+              return;
+            }
+            
+            transcripcionActual = transcripcion.trim();
+            audioActual = {
+              id: 'aud-' + Date.now(),
+              url: audioUrl,
+              transcripcion: transcripcionActual,
+              createdAt: new Date().toLocaleTimeString()
+            };
+            
+            mostrarModalTranscripcion(transcripcionActual);
+          };
+          
+          // Iniciar reconocimiento
+          recognition.start();
+          console.log('🎤 Reconocimiento de voz iniciado');
+          
+        } catch (error) {
+          console.error('❌ Error:', error);
+          mostrarAlerta('⚠️ ' + error.message + ' - Completa manualmente', 'error');
+          
+          // Fallback: crear modal vacío para que complete manualmente
+          audioActual = {
+            id: 'aud-' + Date.now(),
+            url: audioUrl,
+            transcripcion: '[Completa manualmente]',
+            createdAt: new Date().toLocaleTimeString()
+          };
+          
+          mostrarModalTranscripcion('[Completa manualmente]');
+        }
+      };
+      
+      reader.readAsArrayBuffer(audioBlob);
     }
 
     function mostrarModalTranscripcion(transcripcion) {

@@ -1,6 +1,6 @@
 /**
  * Transcribe Audio - Netlify Function
- * Usa Claude API para transcribir audios médicos
+ * Usa Claude API con audio para transcribir
  */
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -23,7 +23,7 @@ exports.handler = async (event) => {
         headers,
         body: JSON.stringify({ 
           error: 'API key no configurada',
-          transcripcion: '❌ Error: ANTHROPIC_API_KEY no configurada en Netlify'
+          transcripcion: '❌ Error: ANTHROPIC_API_KEY no configurada'
         })
       };
     }
@@ -40,9 +40,9 @@ exports.handler = async (event) => {
     }
 
     console.log('🎙️ Transcribiendo audio con Claude...');
-    console.log('Tipo:', mimeType);
 
-    // Llamar a Claude con audio (vision con base64)
+    // Claude 4 soporta audio en base64
+    // Intentamos enviar el audio como contenido a procesar
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -52,26 +52,27 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1',
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Eres un especialista médico en ecografía. 
+                text: `Eres un experto en transcripción médica.
 
-Tu tarea ES TRANSCRIBIR el audio médico que te proporciona el doctor.
+Tu única tarea es TRANSCRIBIR exactamente lo que escuchas en el audio.
 
-REGLAS CRÍTICAS:
-1. TRANSCRIBO EXACTAMENTE lo que dice el doctor
-2. NO inventas hallazgos
-3. NO agrego interpretaciones
-4. Preservo la estructura y orden
-5. Si hay pausas o dudas, lo indico con [pausa] o [inaudible]
-6. Formato CLARO y LEGIBLE para que el doctor pueda editarlo
+REGLAS:
+1. TRANSCRIBA palabra por palabra lo que dice
+2. NO invente nada
+3. NO agregue interpretaciones
+4. Si hay algo inaudible, escriba [inaudible]
+5. Si hay pausas, escriba [pausa]
+6. Preserve la estructura y puntuación
+7. SOLO transcribe - nada más
 
-Solo transcribe el audio. Nada más.`
+El audio está en base64 adjunto.`
               },
               {
                 type: 'image',
@@ -89,25 +90,28 @@ Solo transcribe el audio. Nada más.`
 
     if (!claudeResponse.ok) {
       const errorData = await claudeResponse.text();
-      console.error('❌ Claude API error:', claudeResponse.status, errorData);
+      console.error('❌ Claude API error:', claudeResponse.status);
       
-      // Fallback: retornar placeholder
+      // Si Claude no puede procesar audio, usamos fallback
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({
           success: false,
-          transcripcion: '[Transcripción pendiente - Por favor, completa manualmente]',
-          aviso: 'Claude API no disponible en este momento. Completa manualmente el texto.'
+          transcripcion: '[Transcripción pendiente - completa manualmente en el campo]',
+          aviso: 'La transcripción automática no está disponible. Por favor, transcribe el audio manualmente.'
         })
       };
     }
 
     const claudeData = await claudeResponse.json();
-    console.log('✅ Respuesta de Claude recibida');
+    
+    if (!claudeData.content || !claudeData.content[0]) {
+      throw new Error('No content in response');
+    }
 
-    // Extraer texto de respuesta
-    const transcripcion = claudeData.content[0]?.text || '[Sin respuesta de IA]';
+    const transcripcion = claudeData.content[0].text;
+    console.log('✅ Audio transcrito con Claude');
 
     return {
       statusCode: 200,
@@ -121,14 +125,13 @@ Solo transcribe el audio. Nada más.`
   } catch (error) {
     console.error('❌ Error:', error.message);
     
-    // Fallback amigable
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: false,
-        transcripcion: '[Transcripción pendiente - Por favor, completa manualmente]',
-        aviso: error.message
+        transcripcion: '[Transcripción pendiente - completa manualmente en el campo]',
+        error: error.message
       })
     };
   }
