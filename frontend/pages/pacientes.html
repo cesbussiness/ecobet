@@ -3,10 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Pacientes</title>
+  <title>Gestión de Pacientes - Ecosonografía</title>
   <link rel="stylesheet" href="../css/estilos.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* GARANTIZAR QUE EL MODAL FUNCIONE */
+    * { font-family: 'Poppins', sans-serif; }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+    body {
+      background: #f8fafc;
+      margin: 0;
+      padding: 0;
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
+      color: white;
+      padding: 40px 30px;
+      margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .page-header p {
+      margin: 10px 0 0 0;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 0 20px 40px 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-box input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-search {
+      background: #0d9488;
+      color: white;
+    }
+
+    .btn-search:hover {
+      background: #0f766e;
+      transform: translateY(-2px);
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-edit {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: white;
+    }
+
+    .table-container {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      border-bottom: 2px solid #cbd5e1;
+    }
+
+    th {
+      padding: 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 14px;
+    }
+
+    tbody tr {
+      transition: background 0.2s;
+    }
+
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+    }
+
+    .empty-state-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    /* MODAL */
     .modal {
       display: none !important;
       position: fixed;
@@ -14,61 +192,185 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0,0,0,0.5);
+      background: rgba(15, 23, 42, 0.6);
       z-index: 2000;
       align-items: center;
       justify-content: center;
+      padding: 20px;
     }
 
     .modal.active {
       display: flex !important;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .modal-content {
       background: white;
-      border-radius: 16px;
-      padding: 30px;
+      border-radius: 20px;
+      padding: 40px;
       max-width: 500px;
-      width: 90%;
+      width: 100%;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.3);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #f0f4f8;
+      padding-bottom: 20px;
     }
 
     .modal-header h2 {
       margin: 0;
-      font-size: 24px;
+      font-size: 28px;
+      color: #0f172a;
     }
 
     .modal-close {
       background: none;
       border: none;
-      font-size: 24px;
+      font-size: 32px;
       cursor: pointer;
-      color: #666;
+      color: #94a3b8;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      border-radius: 8px;
+    }
+
+    .modal-close:hover {
+      color: #0f172a;
+      background: #f0f4f8;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      box-sizing: border-box;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #1e40af;
+      box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
     }
 
     .form-actions {
       display: flex;
-      gap: 10px;
-      margin-top: 20px;
+      gap: 12px;
+      margin-top: 30px;
     }
 
     .form-actions button {
       flex: 1;
-      padding: 12px;
+      padding: 14px 20px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       font-size: 14px;
       font-weight: 600;
+      transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .form-actions .btn-primary {
+      background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+    }
+
+    .form-actions .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 64, 175, 0.35);
+    }
+
+    .form-actions .btn-secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .form-actions .btn-secondary:hover {
+      background: #cbd5e1;
+    }
+
+    @media (max-width: 600px) {
+      .content {
+        padding: 0 15px 30px 15px;
+      }
+
+      .page-header {
+        padding: 30px 20px;
+      }
+
+      .page-header h1 {
+        font-size: 28px;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .search-box {
+        flex-direction: column;
+      }
+
+      .modal-content {
+        padding: 30px 20px;
+      }
+
+      th, td {
+        padding: 12px 8px;
+        font-size: 12px;
+      }
+
+      .btn {
+        padding: 10px 16px;
+        font-size: 12px;
+      }
     }
   </style>
 </head>
@@ -91,12 +393,21 @@
   <div class="content" id="content">
     <div class="page-header">
       <h1>👥 Gestión de Pacientes</h1>
+      <p>Administra y organiza los pacientes del sistema</p>
     </div>
 
-    <button id="new-patient-btn" class="btn btn-large btn-primary">➕ Nuevo Paciente</button>
+    <!-- CONTROLES -->
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="search" placeholder="Buscar por nombre o cédula...">
+        <button class="btn btn-search" onclick="buscar()">🔍 Buscar</button>
+      </div>
+      <button class="btn btn-primary" onclick="abrirModal()">➕ Nuevo Paciente</button>
+    </div>
 
+    <!-- TABLA -->
     <div class="table-container">
-      <table class="table">
+      <table>
         <thead>
           <tr>
             <th>Nombre</th>
@@ -107,7 +418,14 @@
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="5">Cargando...</td></tr>
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px;">
+              <div class="empty-state">
+                <div class="empty-state-icon">⏳</div>
+                <p>Cargando pacientes...</p>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -118,31 +436,37 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modal-title">Nuevo Paciente</h2>
-        <button class="modal-close" type="button">✕</button>
+        <button class="modal-close" type="button" onclick="cerrarModal()">✕</button>
       </div>
-      <form id="form">
+
+      <form id="form" onsubmit="guardar(event)">
         <div class="form-group">
           <label>Nombre *</label>
           <input type="text" id="nombre" required>
         </div>
+
         <div class="form-group">
           <label>Apellido</label>
           <input type="text" id="apellido">
         </div>
+
         <div class="form-group">
           <label>Cédula *</label>
           <input type="text" id="cedula" required>
         </div>
+
         <div class="form-group">
           <label>Email</label>
           <input type="email" id="email">
         </div>
+
         <div class="form-group">
           <label>Teléfono</label>
           <input type="tel" id="telefono">
         </div>
+
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">💾 Guardar</button>
+          <button type="submit" class="btn btn-primary">💾 Guardar Paciente</button>
           <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
         </div>
       </form>
@@ -157,19 +481,12 @@
 
     // INIT
     window.addEventListener('load', () => {
-      console.log('✅ Página cargada');
+      console.log('✅ Página Pacientes lista');
       
-      // Init layout
       if (typeof layout !== 'undefined') {
         layout.init();
       }
       
-      // Eventos
-      document.getElementById('new-patient-btn').onclick = abrirModal;
-      document.querySelector('.modal-close').onclick = cerrarModal;
-      document.getElementById('form').onsubmit = guardar;
-      
-      // Cargar
       cargar();
     });
 
@@ -187,7 +504,7 @@
     }
 
     function cargar() {
-      console.log('📥 Cargando...');
+      console.log('📥 Cargando pacientes...');
       let data = typeof storage !== 'undefined' ? storage.getPacientes() : [];
       console.log('📊 Total:', data.length);
       mostrar(data);
@@ -197,19 +514,28 @@
       const tbody = document.getElementById('tbody');
       
       if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;">No hay pacientes</td></tr>';
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 60px;">
+              <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <p>No hay pacientes registrados</p>
+              </div>
+            </td>
+          </tr>
+        `;
         return;
       }
 
       tbody.innerHTML = data.map(p => `
         <tr>
-          <td>${p.nombre} ${p.apellido || ''}</td>
+          <td><strong>${p.nombre}</strong> ${p.apellido || ''}</td>
           <td>${p.cedula}</td>
           <td>${p.email || '—'}</td>
           <td>${p.telefono || '—'}</td>
           <td>
-            <button class="btn btn-small btn-secondary" onclick="editar('${p.id}')">✎</button>
-            <button class="btn btn-small btn-error" onclick="eliminar('${p.id}')">🗑️</button>
+            <button class="btn btn-small btn-edit" onclick="editar('${p.id}')">✎ Editar</button>
+            <button class="btn btn-small btn-delete" onclick="eliminar('${p.id}')">🗑️ Eliminar</button>
           </td>
         </tr>
       `).join('');
@@ -248,7 +574,7 @@
       };
 
       if (!data.nombre || !data.cedula) {
-        alert('⚠️ Nombre y Cédula requeridos');
+        alert('⚠️ Nombre y Cédula son requeridos');
         return;
       }
 
@@ -260,13 +586,13 @@
           if (typeof storage !== 'undefined') {
             storage.updatePaciente(editando, data);
           }
-          alert('✅ Actualizado');
+          alert('✅ Paciente actualizado');
         } else {
-          console.log('➕ Crear');
+          console.log('➕ Crear nuevo');
           if (typeof storage !== 'undefined') {
             storage.addPaciente(data);
           }
-          alert('✅ Creado');
+          alert('✅ Paciente creado');
         }
         
         cerrarModal();
@@ -279,13 +605,31 @@
     }
 
     function eliminar(id) {
-      if (!confirm('¿Eliminar?')) return;
+      if (!confirm('¿Estás seguro de que quieres eliminar este paciente?')) return;
       
       console.log('🗑️ Eliminando:', id);
       if (typeof storage !== 'undefined') {
         storage.deletePaciente(id);
       }
       cargar();
+    }
+
+    function buscar() {
+      const query = document.getElementById('search').value.toLowerCase();
+      
+      if (!query) {
+        cargar();
+        return;
+      }
+      
+      console.log('🔍 Buscando:', query);
+      let data = typeof storage !== 'undefined' ? storage.getPacientes() : [];
+      let filtered = data.filter(p => 
+        (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+        (p.cedula && p.cedula.includes(query))
+      );
+      
+      mostrar(filtered);
     }
 
     function logout(e) {
