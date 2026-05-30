@@ -592,71 +592,165 @@
 
     async function procesarAudio(audioBlob, audioUrl) {
       try {
-        console.log('🎙️ Procesando audio con Whisper...');
-        mostrarAlerta('⏳ Transcribiendo audio completo...', 'info');
+        console.log('🎙️ Procesando audio con Web Speech API...');
+        mostrarAlerta('⏳ Transcribiendo audio...', 'info');
         
-        // Convertir blob a base64
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64Audio = e.target.result.split(',')[1];
-          
-          try {
-            // Llamar a Whisper API a través de /api/transcribe
-            const response = await fetch('/api/transcribe', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                audioBase64: base64Audio,
-                mimeType: audioBlob.type || 'audio/mp3'
-              })
-            });
-            
-            const data = await response.json();
-            
-            if (data.transcription) {
-              const transcripcion = data.transcription.trim();
-              
-              if (!transcripcion || transcripcion === '[Sin transcripción]') {
-                mostrarAlerta('⚠️ No se capturó texto. Completa manualmente.', 'error');
-                audioActual = {
-                  id: 'aud-' + Date.now(),
-                  url: audioUrl,
-                  transcripcion: '[Completa manualmente]',
-                  createdAt: new Date().toLocaleTimeString()
-                };
-              } else {
-                console.log('✅ Transcripción exitosa:', transcripcion);
-                transcripcionActual = transcripcion;
-                audioActual = {
-                  id: 'aud-' + Date.now(),
-                  url: audioUrl,
-                  transcripcion: transcripcion,
-                  createdAt: new Date().toLocaleTimeString()
-                };
-                mostrarAlerta('✅ Transcripción completada', 'success');
-              }
-              
-              mostrarModalTranscripcion(audioActual.transcripcion);
-            } else {
-              throw new Error('Sin respuesta de Whisper');
-            }
-          } catch (error) {
-            console.error('❌ Error Whisper:', error);
-            mostrarAlerta('⚠️ Error transcribiendo. Completa manualmente.', 'error');
-            audioActual = {
-              id: 'aud-' + Date.now(),
-              url: audioUrl,
-              transcripcion: '[Completa manualmente]',
-              createdAt: new Date().toLocaleTimeString()
-            };
-            mostrarModalTranscripcion('[Completa manualmente]');
-          }
-        };
-        reader.readAsDataURL(audioBlob);
-        
+        transcribirConWebSpeechArreglado(audioBlob, audioUrl);
+
       } catch (error) {
         console.error('❌ Error:', error);
         mostrarAlerta('❌ Error procesando audio', 'error');
+      }
+    }
+
+    function transcribirConWebSpeechArreglado(audioBlob, audioUrl) {
+      console.log('🎤 Iniciando transcripción con Web Speech API (ARREGLADO)...');
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        console.error('❌ Web Speech API no disponible');
+        mostrarAlerta('⚠️ Web Speech API no disponible - Completa manualmente', 'error');
+        
+        audioActual = {
+          id: 'aud-' + Date.now(),
+          url: audioUrl,
+          transcripcion: '[Completa manualmente]',
+          createdAt: new Date().toLocaleTimeString()
+        };
+        
+        mostrarModalTranscripcion('[Completa manualmente]');
+        return;
+      }
+      
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      
+      let transcripcion = '';
+      let silencioCount = 0;
+      let tiempoUltimoResultado = Date.now();
+      let timeoutId = null;
+      let isProcessing = true;
+      
+      console.log('🎤 API inicializada, reproduciendo y reconociendo audio...');
+      
+      const audioElement = new Audio();
+      audioElement.src = audioUrl;
+      
+      recognition.onstart = () => {
+        console.log('✅ Reconocimiento iniciado');
+        isProcessing = true;
+        tiempoUltimoResultado = Date.now();
+        mostrarAlerta('⏳ Escuchando audio...', 'info');
+        
+        // Reproducir audio
+        audioElement.play().catch(err => console.log('Audio play:', err));
+      };
+      
+      recognition.onresult = (event) => {
+        console.log('📝 Resultado recibido (index:', event.resultIndex, ')');
+        tiempoUltimoResultado = Date.now();
+        silencioCount = 0;
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          
+          if (event.results[i].isFinal) {
+            if (!transcripcion.includes(transcript)) {
+              transcripcion += transcript + ' ';
+              console.log('✅ Final agregado:', transcript);
+            }
+          }
+        }
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('❌ Error Speech API:', event.error);
+        if (event.error === 'no-speech' || event.error === 'audio-capture') {
+          console.log('⚠️ Reiniciando reconocimiento...');
+          try {
+            recognition.start();
+          } catch (e) {
+            console.log('No se puede reiniciar');
+          }
+        }
+      };
+      
+      recognition.onend = () => {
+        console.log('🛑 Reconocimiento terminado');
+        console.log('📊 Transcripción final:', transcripcion);
+        isProcessing = false;
+        
+        const textoLimpio = transcripcion.trim();
+        
+        if (!textoLimpio) {
+          console.log('⚠️ Sin transcripción capturada');
+          mostrarAlerta('⚠️ No se capturó transcripción. Completa manualmente.', 'error');
+          
+          audioActual = {
+            id: 'aud-' + Date.now(),
+            url: audioUrl,
+            transcripcion: '[Completa manualmente]',
+            createdAt: new Date().toLocaleTimeString()
+          };
+        } else {
+          console.log('✅ Transcripción exitosa:', textoLimpio);
+          transcripcionActual = textoLimpio;
+          audioActual = {
+            id: 'aud-' + Date.now(),
+            url: audioUrl,
+            transcripcion: textoLimpio,
+            createdAt: new Date().toLocaleTimeString()
+          };
+          mostrarAlerta('✅ Transcripción completada', 'success');
+        }
+        
+        mostrarModalTranscripcion(audioActual.transcripcion);
+        
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+      
+      try {
+        // Iniciar reconocimiento
+        recognition.start();
+        console.log('🎤 Recognition.start() llamado');
+        
+        // Timeout: si el audio dura más de lo que Recognition puede capturar,
+        // detenemos después de que el audio termina
+        audioElement.onended = () => {
+          console.log('🔊 Audio terminó de reproducir');
+          // Esperar un poco más por resultados finales
+          timeoutId = setTimeout(() => {
+            if (isProcessing) {
+              console.log('⏱️ Timeout - deteniendo reconocimiento');
+              recognition.stop();
+            }
+          }, 1000);
+        };
+        
+        // Timeout de seguridad: máximo 60 segundos
+        setTimeout(() => {
+          if (isProcessing) {
+            console.log('⏱️ Timeout de seguridad (60s) - deteniendo');
+            recognition.stop();
+          }
+        }, 60000);
+        
+      } catch (error) {
+        console.error('❌ Error iniciando:', error);
+        mostrarAlerta('❌ Error: ' + error.message, 'error');
+        
+        audioActual = {
+          id: 'aud-' + Date.now(),
+          url: audioUrl,
+          transcripcion: '[Completa manualmente]',
+          createdAt: new Date().toLocaleTimeString()
+        };
+        
+        mostrarModalTranscripcion('[Completa manualmente]');
       }
     }
 
