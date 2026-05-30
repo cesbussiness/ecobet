@@ -49,9 +49,14 @@
 
     .login-container {
       width: 100%;
-      max-width: 460px;
+      max-width: 100vw;
       position: relative;
-      z-index: 10;
+      z-index: 100;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
 
     .login-card {
@@ -62,6 +67,9 @@
       padding: 3rem 2.5rem;
       box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8);
       animation: slideInUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      z-index: 100;
+      max-width: 100%;
     }
 
     .login-header {
@@ -412,9 +420,9 @@
         // Guardar autenticación
         layout.setAuthInfo(response.token, response.role, response.name);
 
-        // Redirigir al dashboard
+        // Redirigir al dashboard (mismo directorio que login.html)
         setTimeout(() => {
-          window.location.href = 'pages/dashboard.html';
+          window.location.href = 'dashboard.html';
         }, 300);
       } catch (error) {
         let message = 'Error al ingresar';
