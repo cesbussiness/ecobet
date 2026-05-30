@@ -306,30 +306,27 @@
     async function loadPacientes() {
       try {
         console.log('📥 Cargando pacientes...');
-        
-        let pacientes = [];
-        try {
-          const response = await api.getPacientes({limit: 1000});
-          pacientes = response.data || [];
-          console.log('✅ Desde API:', pacientes.length);
-        } catch (apiError) {
-          console.log('⚠️ API falló, usando localStorage...');
-          pacientes = typeof storage !== 'undefined' ? storage.getPacientes() : [];
-          console.log('✅ Desde localStorage:', pacientes.length);
-        }
-        
-        renderPacientes(pacientes);
-        console.log('✅ Tabla renderizada');
-        
+        const response = await api.getPacientes({limit: 1000});
+        console.log('✅ Pacientes cargados:', response.data);
+        renderPacientes(response.data || []);
       } catch (error) {
-        console.error('❌ Error fatal:', error);
+        console.error('❌ Error al cargar:', error);
+        // Si falla, intentar cargar de localStorage directamente
+        if (typeof storage !== 'undefined') {
+          console.log('📚 Cargando de localStorage...');
+          const pacientes = storage.getPacientes();
+          console.log('✅ Pacientes desde localStorage:', pacientes);
+          renderPacientes(pacientes);
+        } else {
+          document.getElementById('pacientes-tbody').innerHTML = `
+            <tr><td colspan="5" class="alert alert-error">Error al cargar pacientes</td></tr>
+          `;
+        }
       }
     }
 
     function renderPacientes(pacientes) {
       const tbody = document.getElementById('pacientes-tbody');
-      
-      console.log('🎨 Renderizando', pacientes?.length || 0, 'pacientes');
       
       if (!pacientes || pacientes.length === 0) {
         tbody.innerHTML = `
@@ -348,10 +345,10 @@
       tbody.innerHTML = pacientes.map(p => `
         <tr>
           <td>
-            <div class="patient-name">${p.nombre || '—'} ${p.apellido || ''}</div>
+            <div class="patient-name">${p.nombre} ${p.apellido}</div>
           </td>
           <td>
-            <div class="patient-id">${p.cedula || '—'}</div>
+            <div class="patient-id">${p.cedula}</div>
           </td>
           <td>${p.email || '—'}</td>
           <td>${p.telefono || '—'}</td>
@@ -361,22 +358,96 @@
                 ✎ Editar
               </button>
               <button class="btn btn-small btn-error" onclick="deletePaciente('${p.id}')">
-                🗑️ Eliminar
+                🗑 Eliminar
               </button>
             </div>
           </td>
         </tr>
       `).join('');
-      
-      console.log('✅ Tabla renderizada con', pacientes.length, 'filas');
+    }
+
+    function openNewPatient() {
+      editingId = null;
+      document.getElementById('modal-title').textContent = 'Nuevo Paciente';
+      document.getElementById('patient-form').reset();
+      document.getElementById('patient-modal').classList.add('active');
+    }
+
+    async function editPaciente(id) {
+      try {
+        const paciente = await api.getPaciente(id);
+        editingId = id;
+        document.getElementById('modal-title').textContent = 'Editar Paciente';
+        document.getElementById('nombre').value = paciente.nombre;
+        document.getElementById('apellido').value = paciente.apellido;
+        document.getElementById('cedula').value = paciente.cedula;
+        document.getElementById('email').value = paciente.email || '';
+        document.getElementById('telefono').value = paciente.telefono || '';
+        document.getElementById('fechaNacimiento').value = paciente.fechaNacimiento || '';
+        document.getElementById('genero').value = paciente.genero || '';
+        document.getElementById('patient-modal').classList.add('active');
+      } catch (error) {
+        alert('Error al cargar paciente: ' + error.message);
+      }
+    }
+
+    async function savePaciente(e) {
+      e.preventDefault();
+
+      const data = {
+        nombre: document.getElementById('nombre').value,
+        apellido: document.getElementById('apellido').value,
+        cedula: document.getElementById('cedula').value,
+        email: document.getElementById('email').value,
+        telefono: document.getElementById('telefono').value,
+        fechaNacimiento: document.getElementById('fechaNacimiento').value,
+        genero: document.getElementById('genero').value
+      };
+
+      // Validar que no esté vacío
+      if (!data.nombre || !data.cedula) {
+        alert('⚠️ Por favor llena Nombre y Cédula');
+        return;
+      }
+
+      try {
+        console.log('💾 Guardando paciente...', data);
+        
+        if (editingId) {
+          console.log('✏️ Actualizando paciente:', editingId);
+          const resultado = await api.updatePaciente(editingId, data);
+          console.log('✅ Paciente actualizado:', resultado);
+          alert('✅ Paciente actualizado');
+        } else {
+          console.log('➕ Creando nuevo paciente...');
+          const resultado = await api.createPaciente(data);
+          console.log('✅ Paciente creado:', resultado);
+          alert('✅ Paciente creado');
+        }
+        
+        closeModal();
+        loadPacientes();
+        
+      } catch (error) {
+        console.error('❌ Error en savePaciente:', error);
+        alert('⚠️ Error: ' + (error.message || error));
+      }
+    }
+
+    async function deletePaciente(id) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este paciente?')) return;
+
+      try {
+        await api.deletePaciente(id);
+        alert('Paciente eliminado');
+        loadPacientes();
+      } catch (error) {
+        alert('Error al eliminar: ' + error.message);
+      }
     }
 
     function closeModal() {
-      const modal = document.getElementById('patient-modal');
-      if (modal) {
-        modal.classList.remove('active');
-        console.log('✅ Modal cerrado');
-      }
+      document.getElementById('patient-modal').classList.remove('active');
       editingId = null;
     }
 
