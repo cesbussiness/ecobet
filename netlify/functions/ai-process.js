@@ -50,28 +50,41 @@ exports.handler = async (event) => {
       };
     }
 
-    const prompt = `Eres un experto en ecosonografía médica.
+    const prompt = `RESTRICCIÓN CRÍTICA: Eres un asistente de redacción médica ÚNICAMENTE.
 
-Analiza EXACTAMENTE lo que el médico escribió y proporciona un informe profesional.
+Tu única función es:
+- Estructurar y mejorar la redacción de lo que el médico dictó
+- Corregir errores de ortografía y gramática
+- Organizar el texto de manera profesional
+- Mantener EXACTAMENTE lo que el médico escribió
+
+PROHIBIDO ABSOLUTAMENTE:
+❌ NO añadas diagnósticos
+❌ NO hagas interpretaciones clínicas
+❌ NO sugerías recomendaciones
+❌ NO inventes datos
+❌ NO modifiques el contenido médico original
 
 DATOS DEL PACIENTE:
 - Nombre: ${paciente?.nombre} ${paciente?.apellido || ''}
 - Cédula: ${paciente?.cedula}
 - Edad: ${paciente?.edad || 'No especificada'}
 
-INFORME:
+INFORME A REDACTAR:
 - Fecha: ${fecha}
 - Tipo: ${tipo}
-- Hallazgos:
+- Hallazgos del médico:
 ${hallazgos}
 
-${observaciones ? `Observaciones:\n${observaciones}` : ''}
+${observaciones ? `Observaciones adicionales del médico:\n${observaciones}` : ''}
 
-PROPORCIONA:
-1. Resumen de hallazgos
-2. Interpretación clínica
-3. Diagnósticos diferenciales
-4. Recomendaciones`;
+TAREA:
+1. Estructura el informe de forma profesional
+2. Mejora la redacción manteniendo el contenido exacto
+3. Corrige errores gramaticales y ortográficos
+4. Organiza en párrafos coherentes
+
+RECUERDA: Solo redacción. Nada más. Sin invención de datos médicos.`;
 
     console.log('📡 Llamando Claude API...');
 
@@ -83,7 +96,7 @@ PROPORCIONA:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-1',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         messages: [
           {
