@@ -3,198 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pacientes — Ecosonografía</title>
+  <title>Gestión de Pacientes - Ecosonografía</title>
   <link rel="stylesheet" href="../css/estilos.css">
-  <style>
-    .pacientes-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--space-lg);
-      flex-wrap: wrap;
-      gap: var(--space-lg);
-    }
-
-    .search-box {
-      display: flex;
-      gap: var(--space-md);
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .search-box input {
-      flex: 1;
-      min-width: 150px;
-    }
-
-    .pacientes-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: var(--space-lg);
-      background: var(--color-white);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .pacientes-table thead {
-      background: var(--color-bg-lighter);
-    }
-
-    .pacientes-table th {
-      padding: var(--space-md);
-      text-align: left;
-      font-weight: 600;
-      color: var(--color-text-dark);
-      border-bottom: 2px solid var(--color-border);
-    }
-
-    .pacientes-table td {
-      padding: var(--space-md);
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    .pacientes-table tbody tr:hover {
-      background: var(--color-bg-light);
-    }
-
-    .patient-name {
-      font-weight: 600;
-      color: var(--color-text-dark);
-    }
-
-    .patient-id {
-      font-size: var(--size-sm);
-      color: var(--color-text-muted);
-    }
-
-    .table-actions {
-      display: flex;
-      gap: var(--space-sm);
-    }
-
-    .btn-small {
-      padding: var(--space-sm) var(--space-md);
-      font-size: var(--size-sm);
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-lg);
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: var(--color-white);
-      border-radius: var(--radius-lg);
-      padding: var(--space-2xl);
-      max-width: 500px;
-      width: 100%;
-      box-shadow: var(--shadow-xl);
-      animation: slideInUp var(--transition-base) ease-out;
-    }
-
-    .modal-header {
-      margin-bottom: var(--space-lg);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-header h2 {
-      margin: 0;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--color-text-muted);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: var(--space-2xl);
-      color: var(--color-text-muted);
-    }
-
-    .empty-state-icon {
-      font-size: 3rem;
-      margin-bottom: var(--space-md);
-    }
-
-    /* Mobile */
-    @media (max-width: 767px) {
-      .pacientes-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .search-box {
-        flex-direction: column;
-      }
-
-      .search-box input,
-      .search-box button {
-        width: 100%;
-      }
-
-      .pacientes-table {
-        font-size: var(--size-sm);
-      }
-
-      .pacientes-table th,
-      .pacientes-table td {
-        padding: var(--space-sm);
-      }
-
-      .table-actions {
-        flex-direction: column;
-      }
-
-      .btn-small {
-        width: 100%;
-      }
-
-      .modal-content {
-        padding: var(--space-lg);
-      }
-    }
-  </style>
 </head>
-<body class="with-sidebar">
-  <div class="content">
-    <h1 style="margin-bottom: var(--space-lg);">Gestión de Pacientes</h1>
+<body>
+  <!-- SIDEBAR + MOBILE HEADER -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>🏥 Ecosonografía</h1>
+      <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="dashboard.html">📊 Dashboard</a></li>
+      <li><a href="pacientes.html" class="active">👥 Pacientes</a></li>
+      <li><a href="nuevo-informe.html">📝 Nuevo Informe</a></li>
+      <li><a href="historico.html">📚 Histórico</a></li>
+      <li><a href="configuracion.html">⚙️ Configuración</a></li>
+      <li><a href="#" id="logout-btn">🚪 Cerrar Sesión</a></li>
+    </ul>
+  </nav>
 
-    <div class="pacientes-header">
-      <div class="search-box">
-        <input 
-          type="text" 
-          id="search-input" 
-          placeholder="Buscar por nombre, cédula..."
-        >
-        <button class="btn btn-secondary" id="search-btn">🔍 Buscar</button>
-      </div>
-      <button class="btn btn-primary" id="new-patient-btn">
-        ➕ Nuevo Paciente
-      </button>
+  <div class="content" id="content">
+    <!-- MAIN CONTENT -->
+    <div class="page-header">
+      <h1>👥 Gestión de Pacientes</h1>
+      <p>Administra los pacientes del sistema</p>
     </div>
 
-    <div id="table-container">
-      <table class="pacientes-table">
+    <!-- BÚSQUEDA -->
+    <div class="search-section">
+      <input 
+        type="text" 
+        id="search-input" 
+        class="search-input" 
+        placeholder="Buscar por nombre, cédula..."
+      >
+      <button id="search-btn" class="btn btn-primary">🔍 Buscar</button>
+    </div>
+
+    <!-- BOTÓN NUEVO PACIENTE -->
+    <button id="new-patient-btn" class="btn btn-large btn-primary">
+      ➕ Nuevo Paciente
+    </button>
+
+    <!-- TABLA PACIENTES -->
+    <div class="table-container">
+      <table class="table">
         <thead>
           <tr>
             <th>Nombre</th>
@@ -206,8 +60,9 @@
         </thead>
         <tbody id="pacientes-tbody">
           <tr>
-            <td colspan="5" style="text-align: center; padding: var(--space-2xl);">
-              Cargando pacientes...
+            <td colspan="5" style="text-align: center; padding: 60px 20px;">
+              <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
+              <p>Cargando pacientes...</p>
             </td>
           </tr>
         </tbody>
@@ -215,12 +70,12 @@
     </div>
   </div>
 
-  <!-- Modal para nuevo/editar paciente -->
+  <!-- MODAL PACIENTE -->
   <div class="modal" id="patient-modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modal-title">Nuevo Paciente</h2>
-        <button class="modal-close" id="modal-close">×</button>
+        <button class="modal-close" id="modal-close">✕</button>
       </div>
 
       <form id="patient-form">
@@ -230,8 +85,8 @@
         </div>
 
         <div class="form-group">
-          <label for="apellido">Apellido *</label>
-          <input type="text" id="apellido" required>
+          <label for="apellido">Apellido</label>
+          <input type="text" id="apellido">
         </div>
 
         <div class="form-group">
@@ -257,85 +112,147 @@
         <div class="form-group">
           <label for="genero">Género</label>
           <select id="genero">
-            <option value="">-- Seleccionar --</option>
+            <option value="">— Seleccionar —</option>
             <option value="M">Masculino</option>
             <option value="F">Femenino</option>
             <option value="O">Otro</option>
           </select>
         </div>
 
-        <div style="display: flex; gap: var(--space-md);">
-          <button type="submit" class="btn btn-primary">Guardar</button>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar</button>
           <button type="button" class="btn btn-secondary" id="form-close">Cancelar</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- SCRIPTS -->
   <script src="../js/storage.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/layout.js"></script>
 
   <script>
-    layout.setNav([
-      {label: 'Dashboard', icon: '📊', href: 'dashboard.html'},
-      {label: 'Nuevo Informe', icon: '📝', href: 'nuevo-informe.html'},
-      {label: 'Pacientes', icon: '👥', href: 'pacientes.html', active: true},
-      {label: 'Histórico', icon: '📋', href: 'historico.html'},
-      {label: 'Configuración', icon: '⚙️', href: 'configuracion.html'}
-    ]);
-
     let editingId = null;
 
+    // ========================================
+    // INICIALIZACIÓN
+    // ========================================
     document.addEventListener('DOMContentLoaded', () => {
+      console.log('✅ Página Pacientes cargada');
+      
+      // Inicializar layout (hamburguesa)
+      if (typeof layout !== 'undefined') {
+        layout.init();
+        console.log('✅ Layout inicializado (hamburguesa visible)');
+      }
+      
+      // Cargar pacientes
       loadPacientes();
+      
+      // Setup eventos
       setupEventListeners();
+      
+      // Cerrar sesión
+      document.getElementById('logout-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('authToken');
+        window.location.replace('/pages/login.html');
+      });
     });
 
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
     function setupEventListeners() {
-      document.getElementById('new-patient-btn').addEventListener('click', openNewPatient);
-      document.getElementById('patient-form').addEventListener('submit', savePaciente);
-      document.getElementById('modal-close').addEventListener('click', closeModal);
-      document.getElementById('form-close').addEventListener('click', closeModal);
-      document.getElementById('search-btn').addEventListener('click', searchPacientes);
-      document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchPacientes();
-      });
+      const newBtn = document.getElementById('new-patient-btn');
+      const form = document.getElementById('patient-form');
+      const closeBtn = document.getElementById('modal-close');
+      const cancelBtn = document.getElementById('form-close');
+      const searchBtn = document.getElementById('search-btn');
+      const searchInput = document.getElementById('search-input');
+
+      if (newBtn) newBtn.addEventListener('click', openNewPatient);
+      if (form) form.addEventListener('submit', savePaciente);
+      if (closeBtn) closeBtn.addEventListener('click', closeModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+      if (searchBtn) searchBtn.addEventListener('click', searchPacientes);
+      if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') searchPacientes();
+        });
+      }
+
+      console.log('✅ Event listeners configurados');
     }
 
+    // ========================================
+    // ABRIR/CERRAR MODAL
+    // ========================================
+    function openNewPatient() {
+      console.log('📋 Abriendo formulario nuevo paciente');
+      editingId = null;
+      document.getElementById('patient-form').reset();
+      document.getElementById('modal-title').textContent = 'Nuevo Paciente';
+      document.getElementById('patient-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      console.log('✕ Cerrando modal');
+      document.getElementById('patient-modal').classList.remove('active');
+      editingId = null;
+    }
+
+    // ========================================
+    // CARGAR PACIENTES
+    // ========================================
     async function loadPacientes() {
       try {
         console.log('📥 Cargando pacientes...');
-        const response = await api.getPacientes({limit: 1000});
-        console.log('✅ Pacientes cargados:', response.data);
-        renderPacientes(response.data || []);
-      } catch (error) {
-        console.error('❌ Error al cargar:', error);
-        // Si falla, intentar cargar de localStorage directamente
-        if (typeof storage !== 'undefined') {
-          console.log('📚 Cargando de localStorage...');
-          const pacientes = storage.getPacientes();
-          console.log('✅ Pacientes desde localStorage:', pacientes);
-          renderPacientes(pacientes);
-        } else {
-          document.getElementById('pacientes-tbody').innerHTML = `
-            <tr><td colspan="5" class="alert alert-error">Error al cargar pacientes</td></tr>
-          `;
+        
+        let pacientes = [];
+        
+        // Intentar API
+        try {
+          const response = await api.getPacientes({limit: 1000});
+          pacientes = response.data || [];
+          console.log('✅ Pacientes desde API:', pacientes.length);
+        } catch (apiError) {
+          console.log('⚠️ API no disponible, usando localStorage');
+          if (typeof storage !== 'undefined') {
+            pacientes = storage.getPacientes();
+            console.log('✅ Pacientes desde localStorage:', pacientes.length);
+          }
         }
+        
+        renderPacientes(pacientes);
+        
+      } catch (error) {
+        console.error('❌ Error cargando pacientes:', error);
+        document.getElementById('pacientes-tbody').innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 20px;">
+              ❌ Error al cargar pacientes
+            </td>
+          </tr>
+        `;
       }
     }
 
+    // ========================================
+    // RENDERIZAR TABLA
+    // ========================================
     function renderPacientes(pacientes) {
       const tbody = document.getElementById('pacientes-tbody');
+      
+      console.log('🎨 Renderizando', pacientes?.length || 0, 'pacientes');
       
       if (!pacientes || pacientes.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5">
-              <div class="empty-state">
-                <div class="empty-state-icon">👥</div>
-                <p>No hay pacientes registrados</p>
-              </div>
+            <td colspan="5" style="text-align: center; padding: 60px 20px;">
+              <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
+              <p>No hay pacientes registrados</p>
             </td>
           </tr>
         `;
@@ -345,55 +262,71 @@
       tbody.innerHTML = pacientes.map(p => `
         <tr>
           <td>
-            <div class="patient-name">${p.nombre} ${p.apellido}</div>
+            <strong>${p.nombre || '—'}</strong>
+            ${p.apellido ? ` ${p.apellido}` : ''}
           </td>
-          <td>
-            <div class="patient-id">${p.cedula}</div>
-          </td>
+          <td>${p.cedula || '—'}</td>
           <td>${p.email || '—'}</td>
           <td>${p.telefono || '—'}</td>
           <td>
-            <div class="table-actions">
-              <button class="btn btn-small btn-secondary" onclick="editPaciente('${p.id}')">
-                ✎ Editar
-              </button>
-              <button class="btn btn-small btn-error" onclick="deletePaciente('${p.id}')">
-                🗑 Eliminar
-              </button>
-            </div>
+            <button class="btn btn-small btn-secondary" onclick="editarPaciente('${p.id}')">
+              ✎ Editar
+            </button>
+            <button class="btn btn-small btn-error" onclick="eliminarPaciente('${p.id}')">
+              🗑️ Eliminar
+            </button>
           </td>
         </tr>
       `).join('');
+      
+      console.log('✅ Tabla renderizada');
     }
 
-    function openNewPatient() {
-      editingId = null;
-      document.getElementById('modal-title').textContent = 'Nuevo Paciente';
-      document.getElementById('patient-form').reset();
-      document.getElementById('patient-modal').classList.add('active');
-    }
-
-    async function editPaciente(id) {
+    // ========================================
+    // EDITAR PACIENTE
+    // ========================================
+    function editarPaciente(id) {
+      console.log('✏️ Editando paciente:', id);
+      
       try {
-        const paciente = await api.getPaciente(id);
+        let paciente = null;
+        
+        // Buscar en API o localStorage
+        if (typeof storage !== 'undefined') {
+          const pacientes = storage.getPacientes();
+          paciente = pacientes.find(p => p.id === id);
+        }
+        
+        if (!paciente) {
+          alert('❌ Paciente no encontrado');
+          return;
+        }
+        
+        // Llenar formulario
         editingId = id;
-        document.getElementById('modal-title').textContent = 'Editar Paciente';
-        document.getElementById('nombre').value = paciente.nombre;
-        document.getElementById('apellido').value = paciente.apellido;
-        document.getElementById('cedula').value = paciente.cedula;
+        document.getElementById('nombre').value = paciente.nombre || '';
+        document.getElementById('apellido').value = paciente.apellido || '';
+        document.getElementById('cedula').value = paciente.cedula || '';
         document.getElementById('email').value = paciente.email || '';
         document.getElementById('telefono').value = paciente.telefono || '';
         document.getElementById('fechaNacimiento').value = paciente.fechaNacimiento || '';
         document.getElementById('genero').value = paciente.genero || '';
+        
+        document.getElementById('modal-title').textContent = 'Editar Paciente';
         document.getElementById('patient-modal').classList.add('active');
+        
       } catch (error) {
-        alert('Error al cargar paciente: ' + error.message);
+        console.error('Error editando:', error);
+        alert('Error: ' + error.message);
       }
     }
 
+    // ========================================
+    // GUARDAR PACIENTE
+    // ========================================
     async function savePaciente(e) {
       e.preventDefault();
-
+      
       const data = {
         nombre: document.getElementById('nombre').value,
         apellido: document.getElementById('apellido').value,
@@ -401,64 +334,96 @@
         email: document.getElementById('email').value,
         telefono: document.getElementById('telefono').value,
         fechaNacimiento: document.getElementById('fechaNacimiento').value,
-        genero: document.getElementById('genero').value
+        genero: document.getElementById('genero').value,
+        esAdulto: true
       };
 
-      // Validar que no esté vacío
+      // Validar
       if (!data.nombre || !data.cedula) {
-        alert('⚠️ Por favor llena Nombre y Cédula');
+        alert('⚠️ Nombre y Cédula son requeridos');
         return;
       }
 
       try {
-        console.log('💾 Guardando paciente...', data);
+        console.log('💾 Guardando paciente...');
         
         if (editingId) {
-          console.log('✏️ Actualizando paciente:', editingId);
-          const resultado = await api.updatePaciente(editingId, data);
-          console.log('✅ Paciente actualizado:', resultado);
+          // ACTUALIZAR
+          console.log('✏️ Actualizando:', editingId);
+          await api.updatePaciente(editingId, data);
+          console.log('✅ Paciente actualizado');
           alert('✅ Paciente actualizado');
         } else {
-          console.log('➕ Creando nuevo paciente...');
-          const resultado = await api.createPaciente(data);
-          console.log('✅ Paciente creado:', resultado);
+          // CREAR
+          console.log('➕ Creando nuevo paciente');
+          await api.createPaciente(data);
+          console.log('✅ Paciente creado');
           alert('✅ Paciente creado');
         }
         
         closeModal();
-        loadPacientes();
+        
+        // Esperar y recargar
+        await new Promise(r => setTimeout(r, 300));
+        await loadPacientes();
         
       } catch (error) {
-        console.error('❌ Error en savePaciente:', error);
-        alert('⚠️ Error: ' + (error.message || error));
+        console.error('❌ Error guardando:', error);
+        alert('❌ Error: ' + (error.message || error));
       }
     }
 
-    async function deletePaciente(id) {
-      if (!confirm('¿Estás seguro de que deseas eliminar este paciente?')) return;
+    // ========================================
+    // ELIMINAR PACIENTE
+    // ========================================
+    async function eliminarPaciente(id) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
+        return;
+      }
 
       try {
+        console.log('🗑️ Eliminando paciente:', id);
         await api.deletePaciente(id);
-        alert('Paciente eliminado');
+        console.log('✅ Paciente eliminado');
+        alert('✅ Paciente eliminado');
         loadPacientes();
       } catch (error) {
-        alert('Error al eliminar: ' + error.message);
+        console.error('Error eliminando:', error);
+        alert('Error: ' + error.message);
       }
     }
 
-    function closeModal() {
-      document.getElementById('patient-modal').classList.remove('active');
-      editingId = null;
-    }
-
+    // ========================================
+    // BUSCAR PACIENTES
+    // ========================================
     function searchPacientes() {
-      const query = document.getElementById('search-input').value;
+      const query = document.getElementById('search-input').value.toLowerCase();
+      
       if (!query) {
         loadPacientes();
         return;
       }
-      // Implementar búsqueda en el backend
-      loadPacientes();
+
+      try {
+        console.log('🔍 Buscando:', query);
+        
+        let pacientes = [];
+        if (typeof storage !== 'undefined') {
+          pacientes = storage.getPacientes();
+        }
+        
+        const filtered = pacientes.filter(p => 
+          (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+          (p.cedula && p.cedula.includes(query)) ||
+          (p.apellido && p.apellido.toLowerCase().includes(query))
+        );
+        
+        renderPacientes(filtered);
+        console.log('✅ Búsqueda completada:', filtered.length, 'resultados');
+        
+      } catch (error) {
+        console.error('Error buscando:', error);
+      }
     }
   </script>
 </body>
