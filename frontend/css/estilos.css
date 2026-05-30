@@ -908,3 +908,101 @@ tr:hover {
     border: 2px solid CanvasText;
   }
 }
+
+/* ============================================
+   MOBILE HEADER Y HAMBURGUESA
+   ============================================ */
+
+.mobile-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+}
+
+.mobile-header-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 100%;
+}
+
+.mobile-toggle-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.mobile-toggle-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.mobile-header-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Mostrar en móvil */
+@media (max-width: 479px) {
+  .mobile-header {
+    display: flex;
+  }
+
+  .sidebar.mobile-hidden {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 999;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.mobile-hidden.mobile-active {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .sidebar-overlay.active,
+  .sidebar.mobile-hidden.mobile-active ~ .sidebar-overlay {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .content.sidebar-mobile-hidden {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+

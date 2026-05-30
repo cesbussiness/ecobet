@@ -7,11 +7,11 @@
   <link rel="stylesheet" href="../css/estilos.css">
 </head>
 <body>
-  <!-- SIDEBAR + MOBILE HEADER -->
+  <!-- SIDEBAR -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <h1>🏥 Ecosonografía</h1>
-      <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+      <button class="sidebar-toggle">☰</button>
     </div>
     <ul class="nav-menu">
       <li><a href="dashboard.html">📊 Dashboard</a></li>
@@ -24,7 +24,6 @@
   </nav>
 
   <div class="content" id="content">
-    <!-- MAIN CONTENT -->
     <div class="page-header">
       <h1>👥 Gestión de Pacientes</h1>
       <p>Administra los pacientes del sistema</p>
@@ -32,21 +31,14 @@
 
     <!-- BÚSQUEDA -->
     <div class="search-section">
-      <input 
-        type="text" 
-        id="search-input" 
-        class="search-input" 
-        placeholder="Buscar por nombre, cédula..."
-      >
+      <input type="text" id="search-input" class="search-input" placeholder="Buscar por nombre, cédula...">
       <button id="search-btn" class="btn btn-primary">🔍 Buscar</button>
     </div>
 
-    <!-- BOTÓN NUEVO PACIENTE -->
-    <button id="new-patient-btn" class="btn btn-large btn-primary">
-      ➕ Nuevo Paciente
-    </button>
+    <!-- NUEVO PACIENTE -->
+    <button id="new-patient-btn" class="btn btn-large btn-primary">➕ Nuevo Paciente</button>
 
-    <!-- TABLA PACIENTES -->
+    <!-- TABLA -->
     <div class="table-container">
       <table class="table">
         <thead>
@@ -59,66 +51,53 @@
           </tr>
         </thead>
         <tbody id="pacientes-tbody">
-          <tr>
-            <td colspan="5" style="text-align: center; padding: 60px 20px;">
-              <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
-              <p>Cargando pacientes...</p>
-            </td>
-          </tr>
+          <tr><td colspan="5" style="text-align:center;padding:40px;">Cargando...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- MODAL PACIENTE -->
+  <!-- MODAL -->
   <div class="modal" id="patient-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="modal-title">Nuevo Paciente</h2>
-        <button class="modal-close" id="modal-close">✕</button>
+        <h2>Nuevo Paciente</h2>
+        <button type="button" class="modal-close" id="modal-close">✕</button>
       </div>
-
       <form id="patient-form">
         <div class="form-group">
-          <label for="nombre">Nombre *</label>
-          <input type="text" id="nombre" required>
+          <label>Nombre *</label>
+          <input type="text" id="p-nombre" required>
         </div>
-
         <div class="form-group">
-          <label for="apellido">Apellido</label>
-          <input type="text" id="apellido">
+          <label>Apellido</label>
+          <input type="text" id="p-apellido">
         </div>
-
         <div class="form-group">
-          <label for="cedula">Cédula *</label>
-          <input type="text" id="cedula" required>
+          <label>Cédula *</label>
+          <input type="text" id="p-cedula" required>
         </div>
-
         <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email">
+          <label>Email</label>
+          <input type="email" id="p-email">
         </div>
-
         <div class="form-group">
-          <label for="telefono">Teléfono</label>
-          <input type="tel" id="telefono">
+          <label>Teléfono</label>
+          <input type="tel" id="p-telefono">
         </div>
-
         <div class="form-group">
-          <label for="fechaNacimiento">Fecha de Nacimiento</label>
-          <input type="date" id="fechaNacimiento">
+          <label>Fecha de Nacimiento</label>
+          <input type="date" id="p-fecha">
         </div>
-
         <div class="form-group">
-          <label for="genero">Género</label>
-          <select id="genero">
+          <label>Género</label>
+          <select id="p-genero">
             <option value="">— Seleccionar —</option>
             <option value="M">Masculino</option>
             <option value="F">Femenino</option>
             <option value="O">Otro</option>
           </select>
         </div>
-
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">💾 Guardar</button>
           <button type="button" class="btn btn-secondary" id="form-close">Cancelar</button>
@@ -127,7 +106,6 @@
     </div>
   </div>
 
-  <!-- SCRIPTS -->
   <script src="../js/storage.js"></script>
   <script src="../js/api.js"></script>
   <script src="../js/layout.js"></script>
@@ -135,65 +113,40 @@
   <script>
     let editingId = null;
 
-    // ========================================
-    // INICIALIZACIÓN
-    // ========================================
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('✅ Página Pacientes cargada');
+    // INIT
+    document.addEventListener('DOMContentLoaded', init);
+
+    function init() {
+      console.log('📄 Página Pacientes inicializada');
       
-      // Inicializar layout (hamburguesa)
+      // Layout
       if (typeof layout !== 'undefined') {
         layout.init();
-        console.log('✅ Layout inicializado (hamburguesa visible)');
       }
+      
+      // Eventos
+      document.getElementById('new-patient-btn').addEventListener('click', openModal);
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('form-close').addEventListener('click', closeModal);
+      document.getElementById('patient-form').addEventListener('submit', savePaciente);
+      document.getElementById('search-btn').addEventListener('click', buscar);
+      document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') buscar();
+      });
+      document.getElementById('logout-btn').addEventListener('click', logout);
       
       // Cargar pacientes
-      loadPacientes();
+      cargarPacientes();
       
-      // Setup eventos
-      setupEventListeners();
-      
-      // Cerrar sesión
-      document.getElementById('logout-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.removeItem('authToken');
-        window.location.replace('/pages/login.html');
-      });
-    });
-
-    // ========================================
-    // EVENT LISTENERS
-    // ========================================
-    function setupEventListeners() {
-      const newBtn = document.getElementById('new-patient-btn');
-      const form = document.getElementById('patient-form');
-      const closeBtn = document.getElementById('modal-close');
-      const cancelBtn = document.getElementById('form-close');
-      const searchBtn = document.getElementById('search-btn');
-      const searchInput = document.getElementById('search-input');
-
-      if (newBtn) newBtn.addEventListener('click', openNewPatient);
-      if (form) form.addEventListener('submit', savePaciente);
-      if (closeBtn) closeBtn.addEventListener('click', closeModal);
-      if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
-      if (searchBtn) searchBtn.addEventListener('click', searchPacientes);
-      if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') searchPacientes();
-        });
-      }
-
-      console.log('✅ Event listeners configurados');
+      console.log('✅ Eventos configurados');
     }
 
-    // ========================================
-    // ABRIR/CERRAR MODAL
-    // ========================================
-    function openNewPatient() {
-      console.log('📋 Abriendo formulario nuevo paciente');
+    // ========== FUNCIONES ==========
+
+    function openModal() {
+      console.log('📋 Abriendo modal');
       editingId = null;
       document.getElementById('patient-form').reset();
-      document.getElementById('modal-title').textContent = 'Nuevo Paciente';
       document.getElementById('patient-modal').classList.add('active');
     }
 
@@ -203,10 +156,7 @@
       editingId = null;
     }
 
-    // ========================================
-    // CARGAR PACIENTES
-    // ========================================
-    async function loadPacientes() {
+    async function cargarPacientes() {
       try {
         console.log('📥 Cargando pacientes...');
         
@@ -214,133 +164,102 @@
         
         // Intentar API
         try {
-          const response = await api.getPacientes({limit: 1000});
-          pacientes = response.data || [];
-          console.log('✅ Pacientes desde API:', pacientes.length);
-        } catch (apiError) {
-          console.log('⚠️ API no disponible, usando localStorage');
-          if (typeof storage !== 'undefined') {
-            pacientes = storage.getPacientes();
-            console.log('✅ Pacientes desde localStorage:', pacientes.length);
+          const res = await fetch('/api/patients', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('auth-token')}` }
+          });
+          if (res.ok) {
+            const json = await res.json();
+            pacientes = json.data || [];
+            console.log('✅ API: ' + pacientes.length + ' pacientes');
           }
+        } catch (e) {
+          console.log('⚠️ API error: ' + e.message);
         }
         
-        renderPacientes(pacientes);
+        // Si no hay datos, usar localStorage
+        if (pacientes.length === 0 && typeof storage !== 'undefined') {
+          pacientes = storage.getPacientes();
+          console.log('📚 localStorage: ' + pacientes.length + ' pacientes');
+        }
+        
+        mostrarPacientes(pacientes);
         
       } catch (error) {
-        console.error('❌ Error cargando pacientes:', error);
-        document.getElementById('pacientes-tbody').innerHTML = `
-          <tr>
-            <td colspan="5" style="text-align: center; padding: 20px;">
-              ❌ Error al cargar pacientes
-            </td>
-          </tr>
-        `;
+        console.error('❌ Error: ' + error);
       }
     }
 
-    // ========================================
-    // RENDERIZAR TABLA
-    // ========================================
-    function renderPacientes(pacientes) {
+    function mostrarPacientes(pacientes) {
       const tbody = document.getElementById('pacientes-tbody');
-      
-      console.log('🎨 Renderizando', pacientes?.length || 0, 'pacientes');
       
       if (!pacientes || pacientes.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="text-align: center; padding: 60px 20px;">
-              <div style="font-size: 48px; margin-bottom: 20px;">👥</div>
+            <td colspan="5" style="text-align:center;padding:60px 20px;">
+              <div style="font-size:48px;margin-bottom:20px;">👥</div>
               <p>No hay pacientes registrados</p>
             </td>
           </tr>
         `;
+        console.log('📊 Tabla vacía');
         return;
       }
 
       tbody.innerHTML = pacientes.map(p => `
         <tr>
-          <td>
-            <strong>${p.nombre || '—'}</strong>
-            ${p.apellido ? ` ${p.apellido}` : ''}
-          </td>
+          <td><strong>${p.nombre || '—'}</strong> ${p.apellido || ''}</td>
           <td>${p.cedula || '—'}</td>
           <td>${p.email || '—'}</td>
           <td>${p.telefono || '—'}</td>
           <td>
-            <button class="btn btn-small btn-secondary" onclick="editarPaciente('${p.id}')">
-              ✎ Editar
-            </button>
-            <button class="btn btn-small btn-error" onclick="eliminarPaciente('${p.id}')">
-              🗑️ Eliminar
-            </button>
+            <button class="btn btn-small btn-secondary" onclick="editarPaciente('${p.id}')">✎</button>
+            <button class="btn btn-small btn-error" onclick="eliminarPaciente('${p.id}')">🗑️</button>
           </td>
         </tr>
       `).join('');
       
-      console.log('✅ Tabla renderizada');
+      console.log('✅ ' + pacientes.length + ' pacientes en tabla');
     }
 
-    // ========================================
-    // EDITAR PACIENTE
-    // ========================================
     function editarPaciente(id) {
-      console.log('✏️ Editando paciente:', id);
+      console.log('✏️ Editando: ' + id);
       
-      try {
-        let paciente = null;
-        
-        // Buscar en API o localStorage
-        if (typeof storage !== 'undefined') {
-          const pacientes = storage.getPacientes();
-          paciente = pacientes.find(p => p.id === id);
-        }
-        
-        if (!paciente) {
-          alert('❌ Paciente no encontrado');
-          return;
-        }
-        
-        // Llenar formulario
-        editingId = id;
-        document.getElementById('nombre').value = paciente.nombre || '';
-        document.getElementById('apellido').value = paciente.apellido || '';
-        document.getElementById('cedula').value = paciente.cedula || '';
-        document.getElementById('email').value = paciente.email || '';
-        document.getElementById('telefono').value = paciente.telefono || '';
-        document.getElementById('fechaNacimiento').value = paciente.fechaNacimiento || '';
-        document.getElementById('genero').value = paciente.genero || '';
-        
-        document.getElementById('modal-title').textContent = 'Editar Paciente';
-        document.getElementById('patient-modal').classList.add('active');
-        
-      } catch (error) {
-        console.error('Error editando:', error);
-        alert('Error: ' + error.message);
+      let pacientes = typeof storage !== 'undefined' ? storage.getPacientes() : [];
+      let paciente = pacientes.find(p => p.id === id);
+      
+      if (!paciente) {
+        alert('❌ Paciente no encontrado');
+        return;
       }
+      
+      editingId = id;
+      document.getElementById('p-nombre').value = paciente.nombre || '';
+      document.getElementById('p-apellido').value = paciente.apellido || '';
+      document.getElementById('p-cedula').value = paciente.cedula || '';
+      document.getElementById('p-email').value = paciente.email || '';
+      document.getElementById('p-telefono').value = paciente.telefono || '';
+      document.getElementById('p-fecha').value = paciente.fechaNacimiento || '';
+      document.getElementById('p-genero').value = paciente.genero || '';
+      
+      openModal();
     }
 
-    // ========================================
-    // GUARDAR PACIENTE
-    // ========================================
     async function savePaciente(e) {
       e.preventDefault();
       
       const data = {
-        nombre: document.getElementById('nombre').value,
-        apellido: document.getElementById('apellido').value,
-        cedula: document.getElementById('cedula').value,
-        email: document.getElementById('email').value,
-        telefono: document.getElementById('telefono').value,
-        fechaNacimiento: document.getElementById('fechaNacimiento').value,
-        genero: document.getElementById('genero').value,
+        nombre: document.getElementById('p-nombre').value,
+        apellido: document.getElementById('p-apellido').value,
+        cedula: document.getElementById('p-cedula').value,
+        email: document.getElementById('p-email').value,
+        telefono: document.getElementById('p-telefono').value,
+        fechaNacimiento: document.getElementById('p-fecha').value,
+        genero: document.getElementById('p-genero').value,
         esAdulto: true
       };
 
-      // Validar
       if (!data.nombre || !data.cedula) {
-        alert('⚠️ Nombre y Cédula son requeridos');
+        alert('⚠️ Nombre y Cédula requeridos');
         return;
       }
 
@@ -348,82 +267,69 @@
         console.log('💾 Guardando paciente...');
         
         if (editingId) {
-          // ACTUALIZAR
-          console.log('✏️ Actualizando:', editingId);
-          await api.updatePaciente(editingId, data);
-          console.log('✅ Paciente actualizado');
-          alert('✅ Paciente actualizado');
+          console.log('➡️ Actualizando...');
+          // Actualizar en localStorage
+          if (typeof storage !== 'undefined') {
+            storage.updatePaciente(editingId, data);
+          }
         } else {
-          // CREAR
-          console.log('➕ Creando nuevo paciente');
-          await api.createPaciente(data);
-          console.log('✅ Paciente creado');
-          alert('✅ Paciente creado');
+          console.log('➕ Creando...');
+          // Crear en localStorage
+          if (typeof storage !== 'undefined') {
+            storage.addPaciente(data);
+          }
         }
+        
+        console.log('✅ Guardado');
+        alert('✅ Paciente ' + (editingId ? 'actualizado' : 'creado'));
         
         closeModal();
         
-        // Esperar y recargar
-        await new Promise(r => setTimeout(r, 300));
-        await loadPacientes();
+        setTimeout(() => {
+          cargarPacientes();
+        }, 200);
         
       } catch (error) {
-        console.error('❌ Error guardando:', error);
-        alert('❌ Error: ' + (error.message || error));
+        console.error('❌ Error: ' + error);
+        alert('❌ Error: ' + error.message);
       }
     }
 
-    // ========================================
-    // ELIMINAR PACIENTE
-    // ========================================
-    async function eliminarPaciente(id) {
-      if (!confirm('¿Estás seguro de que deseas eliminar este paciente?')) {
-        return;
-      }
-
-      try {
-        console.log('🗑️ Eliminando paciente:', id);
-        await api.deletePaciente(id);
-        console.log('✅ Paciente eliminado');
-        alert('✅ Paciente eliminado');
-        loadPacientes();
-      } catch (error) {
-        console.error('Error eliminando:', error);
-        alert('Error: ' + error.message);
+    function eliminarPaciente(id) {
+      if (!confirm('¿Eliminar paciente?')) return;
+      
+      console.log('🗑️ Eliminando: ' + id);
+      
+      if (typeof storage !== 'undefined') {
+        storage.deletePaciente(id);
+        console.log('✅ Eliminado');
+        cargarPacientes();
       }
     }
 
-    // ========================================
-    // BUSCAR PACIENTES
-    // ========================================
-    function searchPacientes() {
+    function buscar() {
       const query = document.getElementById('search-input').value.toLowerCase();
       
       if (!query) {
-        loadPacientes();
+        cargarPacientes();
         return;
       }
+      
+      console.log('🔍 Buscando: ' + query);
+      
+      let pacientes = typeof storage !== 'undefined' ? storage.getPacientes() : [];
+      let filtered = pacientes.filter(p => 
+        (p.nombre && p.nombre.toLowerCase().includes(query)) ||
+        (p.cedula && p.cedula.includes(query))
+      );
+      
+      mostrarPacientes(filtered);
+      console.log('✅ ' + filtered.length + ' resultados');
+    }
 
-      try {
-        console.log('🔍 Buscando:', query);
-        
-        let pacientes = [];
-        if (typeof storage !== 'undefined') {
-          pacientes = storage.getPacientes();
-        }
-        
-        const filtered = pacientes.filter(p => 
-          (p.nombre && p.nombre.toLowerCase().includes(query)) ||
-          (p.cedula && p.cedula.includes(query)) ||
-          (p.apellido && p.apellido.toLowerCase().includes(query))
-        );
-        
-        renderPacientes(filtered);
-        console.log('✅ Búsqueda completada:', filtered.length, 'resultados');
-        
-      } catch (error) {
-        console.error('Error buscando:', error);
-      }
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/pages/login.html';
     }
   </script>
 </body>

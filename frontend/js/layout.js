@@ -1,289 +1,196 @@
 /**
- * layout.js
- * Componentes reutilizables: Sidebar, Header, Navigation
- * Responsive: Collapsible en móvil, expandible en desktop
+ * Layout Manager - Sidebar, Hamburguesa, Autenticación
  */
 
 class Layout {
   constructor() {
-    this.sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === 'true';
-    this.userRole = null;
-    this.userName = null;
-    this.init();
+    this.sidebar = null;
+    this.overlay = null;
+    this.mobileHeader = null;
+    this.userRole = localStorage.getItem('user-role');
+    this.userName = localStorage.getItem('user-name');
+    console.log('[Layout] Constructor llamado');
   }
 
+  /**
+   * Inicializar layout - LLAMAR MANUALMENTE en DOMContentLoaded de cada página
+   */
   init() {
-    this.ensureSidebarExists();
-    this.setupToggle();
-    this.setupLogout();
-    this.applyCollapsedState();
-    this.setupMediaQuery();
-    this.loadUserInfo();
-  }
-
-  ensureSidebarExists() {
-    if (!document.querySelector('.sidebar')) {
-      const body = document.body;
-      body.classList.add('with-sidebar');
-      
-      const sidebar = document.createElement('aside');
-      sidebar.className = 'sidebar';
-      sidebar.innerHTML = `
-        <div class="sidebar-header">
-          <span>🏥</span>
-          <span>Ecosonografía</span>
-        </div>
-        
-        <nav class="sidebar-nav" id="main-nav"></nav>
-        
-        <div class="sidebar-footer">
-          <a href="#" id="logout-btn" style="
-            display: flex;
-            align-items: center;
-            gap: var(--space-md);
-            padding: var(--space-md);
-            border-radius: var(--radius-md);
-            color: var(--color-white);
-            text-decoration: none;
-          ">
-            <span>🚪</span>
-            <span>Salir</span>
-          </a>
-        </div>
-      `;
-      
-      body.insertBefore(sidebar, body.firstChild);
-    }
-  }
-
-  setupToggle() {
-    // Botón toggle en el header (si existe)
-    const toggleBtn = document.getElementById('sidebar-toggle');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => this.toggleSidebar());
-    }
-  }
-
-  toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
+    console.log('[Layout] init() llamado');
     
-    this.sidebarCollapsed = !this.sidebarCollapsed;
-    localStorage.setItem('sidebar-collapsed', this.sidebarCollapsed);
-    
-    if (this.sidebarCollapsed) {
-      sidebar.classList.add('collapsed');
-      content.classList.add('sidebar-collapsed');
-    } else {
-      sidebar.classList.remove('collapsed');
-      content.classList.remove('sidebar-collapsed');
-    }
-  }
-
-  applyCollapsedState() {
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-    
-    if (this.sidebarCollapsed) {
-      sidebar.classList.add('collapsed');
-      content?.classList.add('sidebar-collapsed');
-    }
-  }
-
-  setupMediaQuery() {
-    // En móvil, ocultar sidebar completamente con toggle button
-    // En desktop, respetar preferencia de colapso
-    const self = this;  // Guardar this correctamente
-    const mediaQuery = window.matchMedia('(max-width: 479px)');
-    
-    const handleMediaChange = (e) => {
-      console.log('📱 Media query change:', e.matches ? 'MOBILE' : 'DESKTOP');
-      
-      const sidebar = document.querySelector('.sidebar');
-      const content = document.querySelector('.content');
-      
-      if (e.matches) {
-        // Móvil pequeño (<480px): sidebar oculto por defecto
-        console.log('📱 Aplicando mobile-hidden...');
-        sidebar?.classList.add('mobile-hidden');
-        content?.classList.add('sidebar-mobile-hidden');
-        
-        // Crear botón hamburguesa si no existe
-        if (!document.querySelector('.hamburger-menu')) {
-          console.log('📱 Creando botón hamburguesa...');
-          self.createMobileToggle();
-        }
-      } else {
-        // Desktop/tablet: usar estado guardado
-        console.log('🖥️ Modo desktop, removiendo mobile-hidden...');
-        sidebar?.classList.remove('mobile-hidden');
-        content?.classList.remove('sidebar-mobile-hidden');
-        
-        if (self.sidebarCollapsed) {
-          sidebar?.classList.add('collapsed');
-          content?.classList.add('sidebar-collapsed');
-        } else {
-          sidebar?.classList.remove('collapsed');
-          content?.classList.remove('sidebar-collapsed');
-        }
-      }
-    };
-    
-    mediaQuery.addListener(handleMediaChange);
-    handleMediaChange(mediaQuery);  // Ejecutar inmediatamente
-    console.log('✅ setupMediaQuery configurado');
-  }
-
-  createMobileToggle() {
-    // Crear un header FIJO en móvil con el botón hamburguesa
-    const sidebar = document.querySelector('.sidebar');
-    if (!sidebar) {
-      // Reintentar después de que se cree el sidebar
-      setTimeout(() => this.createMobileToggle(), 100);
+    // Verificar autenticación
+    if (!this.isAuthenticated()) {
+      console.log('[Layout] No autenticado, redirigiendo a login');
+      window.location.href = '/pages/login.html';
       return;
     }
-
-    // No crear si ya existe
-    if (document.querySelector('.mobile-header')) return;
-
-    // Crear header fijo para móvil
-    const mobileHeader = document.createElement('div');
-    mobileHeader.className = 'mobile-header';
-    mobileHeader.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 60px;
-      background: var(--color-bg-primary);
-      border-bottom: 1px solid var(--color-border);
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 var(--space-md);
-      z-index: 500;
-    `;
-
-    // Botón hamburguesa
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'hamburger-menu';
-    toggleBtn.innerHTML = '☰';
-    toggleBtn.type = 'button';
-    toggleBtn.setAttribute('aria-label', 'Abrir menú');
-    toggleBtn.style.cssText = `
-      position: static;
-      transform: none;
-      left: auto;
-      top: auto;
-      display: flex;
-    `;
     
-    toggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const sidebar = document.querySelector('.sidebar');
-      const isActive = sidebar?.classList.toggle('mobile-active');
-      
-      // Crear overlay si no existe
-      let overlay = document.querySelector('.sidebar-overlay');
-      if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'sidebar-overlay';
-        document.body.appendChild(overlay);
-        
-        overlay.addEventListener('click', () => {
-          sidebar?.classList.remove('mobile-active');
-          overlay?.classList.remove('active');
-        });
-      }
-      
-      if (isActive) {
-        overlay?.classList.add('active');
-      } else {
-        overlay?.classList.remove('active');
-      }
-    });
-
-    // Título en el header móvil
-    const title = document.createElement('span');
-    title.textContent = '🏥 Ecosonografía';
-    title.style.cssText = 'font-weight: 700; font-size: 1rem;';
-
-    // Armar el header
-    mobileHeader.appendChild(toggleBtn);
-    mobileHeader.appendChild(title);
+    this.sidebar = document.getElementById('sidebar');
+    this.content = document.getElementById('content');
     
-    // Insertar al inicio del body
-    document.body.insertBefore(mobileHeader, document.body.firstChild);
-    
-    // Ajustar body y content para dejar espacio para el header móvil
-    const content = document.querySelector('.content');
-    if (content) {
-      content.style.paddingTop = '60px';
+    if (!this.sidebar) {
+      console.warn('[Layout] No hay sidebar en esta página');
+      return;
     }
     
-    console.log('✅ Mobile header creado');
+    console.log('[Layout] Sidebar encontrado');
+    this.setupMediaQuery();
+    this.setupSidebarToggle();
+    console.log('[Layout] Init completado');
   }
 
-  setNav(items) {
-    /**
-     * items: array de objetos {label, icon, href, active?, role?}
-     * Ejemplo:
-     * [{label: 'Dashboard', icon: '📊', href: '/pages/dashboard.html', active: true}]
-     */
-    const navEl = document.getElementById('main-nav');
-    if (!navEl) return;
+  /**
+   * Setup Media Query para móvil/desktop
+   */
+  setupMediaQuery() {
+    const mediaQuery = window.matchMedia('(max-width: 479px)');
+    console.log('[Layout] setupMediaQuery - isMobile:', mediaQuery.matches);
     
-    navEl.innerHTML = '';
-    items.forEach(item => {
-      // Permitir acceso basado en rol (si está definido)
-      if (item.role && this.userRole && !item.role.includes(this.userRole)) {
-        return;
+    // Verificar tamaño actual
+    if (mediaQuery.matches) {
+      console.log('[Layout] MÓVIL detectado, creando header móvil');
+      this.createMobileHeader();
+    } else {
+      console.log('[Layout] DESKTOP detectado, sidebar normal');
+      this.sidebar.classList.remove('mobile-hidden');
+      this.content.classList.remove('sidebar-mobile-hidden');
+    }
+    
+    // Escuchar cambios
+    mediaQuery.addListener((e) => {
+      console.log('[Layout] Cambio de tamaño - isMobile:', e.matches);
+      if (e.matches) {
+        this.createMobileHeader();
+      } else {
+        this.destroyMobileHeader();
       }
-      
-      const li = document.createElement('li');
-      const link = document.createElement('a');
-      link.href = item.href;
-      link.innerHTML = `<span>${item.icon}</span><span>${item.label}</span>`;
-      
-      if (item.active) {
-        link.classList.add('active');
-      }
-      
-      li.appendChild(link);
-      navEl.appendChild(li);
     });
   }
 
-  setupLogout() {
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.logout();
+  /**
+   * Crear header móvil con hamburguesa
+   */
+  createMobileHeader() {
+    console.log('[Layout] createMobileHeader()');
+    
+    // Si ya existe, no crear de nuevo
+    if (document.getElementById('mobile-header')) {
+      console.log('[Layout] Mobile header ya existe');
+      return;
+    }
+    
+    // Crear header
+    const header = document.createElement('div');
+    header.id = 'mobile-header';
+    header.className = 'mobile-header';
+    header.innerHTML = `
+      <div class="mobile-header-content">
+        <button class="mobile-toggle-btn" id="mobile-toggle-btn">☰</button>
+        <div class="mobile-header-title">🏥 Ecosonografía</div>
+      </div>
+    `;
+    
+    // Insertar al inicio del body
+    document.body.insertBefore(header, document.body.firstChild);
+    console.log('[Layout] Mobile header creado');
+    
+    // Esconder sidebar en móvil
+    this.sidebar.classList.add('mobile-hidden');
+    this.content.classList.add('sidebar-mobile-hidden');
+    this.content.style.paddingTop = '60px';
+    
+    // Setup botón hamburguesa
+    const toggleBtn = document.getElementById('mobile-toggle-btn');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        console.log('[Layout] Toggle hamburguesa clicked');
+        this.sidebar.classList.toggle('mobile-active');
+      });
+      console.log('[Layout] Mobile toggle button setup');
+    }
+    
+    // Crear overlay
+    this.createOverlay();
+  }
+
+  /**
+   * Crear overlay para cerrar sidebar
+   */
+  createOverlay() {
+    if (document.getElementById('sidebar-overlay')) {
+      return;
+    }
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'sidebar-overlay';
+    overlay.className = 'sidebar-overlay';
+    overlay.addEventListener('click', () => {
+      console.log('[Layout] Overlay clicked, cerrando sidebar');
+      this.sidebar.classList.remove('mobile-active');
+    });
+    
+    document.body.appendChild(overlay);
+    console.log('[Layout] Overlay creado');
+  }
+
+  /**
+   * Destruir header móvil (volver a desktop)
+   */
+  destroyMobileHeader() {
+    console.log('[Layout] destroyMobileHeader()');
+    
+    const mobileHeader = document.getElementById('mobile-header');
+    if (mobileHeader) {
+      mobileHeader.remove();
+      console.log('[Layout] Mobile header removido');
+    }
+    
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) {
+      overlay.remove();
+      console.log('[Layout] Overlay removido');
+    }
+    
+    this.sidebar.classList.remove('mobile-hidden');
+    this.sidebar.classList.remove('mobile-active');
+    this.content.classList.remove('sidebar-mobile-hidden');
+    this.content.style.paddingTop = '';
+    
+    console.log('[Layout] Desktop mode restaurado');
+  }
+
+  /**
+   * Setup toggle del sidebar (desktop)
+   */
+  setupSidebarToggle() {
+    const toggleBtn = this.sidebar.querySelector('.sidebar-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log('[Layout] Sidebar toggle clicked');
+        this.sidebar.classList.toggle('collapsed');
       });
     }
   }
 
-  logout() {
-    localStorage.removeItem('auth-token');
-    localStorage.removeItem('user-role');
-    localStorage.removeItem('user-name');
-    window.location.href = 'login.html';
-  }
-
-  loadUserInfo() {
-    this.userRole = localStorage.getItem('user-role');
-    this.userName = localStorage.getItem('user-name');
-  }
-
+  /**
+   * Verificar autenticación
+   */
   isAuthenticated() {
-    return !!localStorage.getItem('auth-token');
+    const token = localStorage.getItem('auth-token');
+    return !!token;
   }
 
+  /**
+   * Obtener token
+   */
   getAuthToken() {
     return localStorage.getItem('auth-token');
   }
 
+  /**
+   * Guardar info autenticación
+   */
   setAuthInfo(token, role, name) {
     localStorage.setItem('auth-token', token);
     localStorage.setItem('user-role', role);
@@ -296,10 +203,4 @@ class Layout {
 // Instancia global
 const layout = new Layout();
 
-// Auto-redirigir a login si no autenticado (excepto en login.html)
-document.addEventListener('DOMContentLoaded', () => {
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-  if (currentPage !== 'login.html' && !layout.isAuthenticated()) {
-    window.location.href = 'login.html';
-  }
-});
+console.log('[Layout.js] Cargado correctamente');
