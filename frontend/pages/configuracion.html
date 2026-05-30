@@ -126,7 +126,22 @@
   </style>
 </head>
 <body class="with-sidebar">
-  <div class="content">
+    <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>🏥 Ecosonografía</h1>
+    </div>
+    <ul class="nav-menu">
+      <li><a href="dashboard.html">📊 Dashboard</a></li>
+      <li><a href="pacientes.html">👥 Pacientes</a></li>
+      <li><a href="nuevo-informe.html">📝 Nuevo Informe</a></li>
+      <li><a href="historico.html">📚 Histórico</a></li>
+      <li><a href="configuracion.html">⚙️ Configuración</a></li>
+      <li><a href="#" onclick="logout(event)">🚪 Cerrar Sesión</a></li>
+    </ul>
+  </nav>
+  
+  <div class="content" id="content">
     <div class="settings-container">
       <h1 style="margin-bottom: var(--space-lg);">Configuración</h1>
 

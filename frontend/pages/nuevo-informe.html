@@ -284,7 +284,23 @@
 
       <div class="form-group">
         <label>Hallazgos Clínicos *</label>
-        <textarea id="hallazgos" rows="6" placeholder="Describe los hallazgos observados en la ecosonografía..." required></textarea>
+        
+        <!-- AUDIOS INPUT -->
+        <div style="margin-bottom: 16px; padding: 16px; background: #f0f4f8; border-radius: 10px; border: 2px dashed var(--border);">
+          <label style="display: block; margin-bottom: 12px; font-weight: 600; color: var(--dark);">
+            🎙️ Adjuntar Audios (opcional)
+          </label>
+          
+          <input type="file" id="audio-input" accept="audio/*" multiple style="margin-bottom: 12px;">
+          
+          <div id="audio-list" style="margin-top: 12px;"></div>
+          
+          <button type="button" class="btn btn-secondary" onclick="transcribirAudios()" style="margin-top: 12px; width: 100%;">
+            ✨ Transcribir Audios
+          </button>
+        </div>
+        
+        <textarea id="hallazgos" rows="6" placeholder="Describe los hallazgos o pega aquí la transcripción de los audios..." required></textarea>
       </div>
 
       <div class="form-group">
@@ -500,6 +516,108 @@
       
       const hoy = new Date().toISOString().split('T')[0];
       document.getElementById('fecha').value = hoy;
+    }
+
+
+    let audiosAdjuntos = [];
+
+    document.getElementById('audio-input').addEventListener('change', (e) => {
+      audiosAdjuntos = Array.from(e.target.files);
+      mostrarAudios();
+    });
+
+    function mostrarAudios() {
+      const list = document.getElementById('audio-list');
+      
+      if (audiosAdjuntos.length === 0) {
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = audiosAdjuntos.map((audio, i) => `
+        <div style="padding: 8px; background: white; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px;">
+            🎵 ${audio.name} (${(audio.size / 1024).toFixed(1)} KB)
+          </span>
+          <button type="button" class="btn btn-small" onclick="eliminarAudio(${i})" style="background: #ef4444; color: white; padding: 4px 8px;">
+            ✕
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function eliminarAudio(index) {
+      audiosAdjuntos.splice(index, 1);
+      document.getElementById('audio-input').value = '';
+      mostrarAudios();
+    }
+
+    async function transcribirAudios() {
+      if (audiosAdjuntos.length === 0) {
+        mostrarAlerta('⚠️ No hay audios para transcribir', 'error');
+        return;
+      }
+
+      console.log('🎙️ Transcribiendo', audiosAdjuntos.length, 'audio(s)...');
+
+      let transcripcionCompleta = '';
+
+      for (let i = 0; i < audiosAdjuntos.length; i++) {
+        const audio = audiosAdjuntos[i];
+        
+        try {
+          console.log('📡 Procesando audio', i + 1, 'de', audiosAdjuntos.length);
+          
+          // Convertir audio a base64
+          const base64 = await leerArchivoBase64(audio);
+
+          // Llamar API de transcripción
+          const response = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
+            },
+            body: JSON.stringify({
+              audioBase64: base64.split(',')[1],
+              mimeType: audio.type
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('✅ Audio', i + 1, 'transcrito');
+
+          transcripcionCompleta += `[Audio ${i + 1}]
+${data.transcripcion}
+
+`;
+
+        } catch (error) {
+          console.error('❌ Error transcribiendo audio', i + 1, ':', error);
+          mostrarAlerta('❌ Error transcribiendo audio ' + (i + 1), 'error');
+          return;
+        }
+      }
+
+      // Llenar campo de hallazgos con transcripción
+      const hallazgosField = document.getElementById('hallazgos');
+      hallazgosField.value = transcripcionCompleta + hallazgosField.value;
+      
+      mostrarAlerta('✅ Audios transcriptos y añadidos a hallazgos', 'success');
+      console.log('✅ Todos los audios procesados');
+    }
+
+    function leerArchivoBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     function logout(e) {

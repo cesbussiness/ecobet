@@ -379,5 +379,18 @@
       }
     }
   </script>
+
+  <script src="../js/layout.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      if (typeof layout !== 'undefined') layout.init();
+    });
+    
+    function logout(e) {
+      e.preventDefault();
+      localStorage.clear();
+      window.location.href = '/pages/login.html';
+    }
+  </script>
 </body>
 </html>
