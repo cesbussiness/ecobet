@@ -829,46 +829,67 @@
       btn.disabled = true;
 
       try {
-        console.log('📡 Llamando API Claude...');
+        console.log('📡 Enviando datos a /api/ai-process...');
+        console.log('Paciente:', paciente.nombre);
+        console.log('Hallazgos length:', hallazgos.length);
         
+        mostrarAlerta('⏳ Generando informe con Claude IA...', 'info');
+        
+        const requestBody = {
+          paciente: {
+            nombre: paciente.nombre,
+            apellido: paciente.apellido,
+            cedula: paciente.cedula,
+            edad: paciente.edad,
+            genero: paciente.genero
+          },
+          fecha: fecha,
+          tipo: tipo,
+          hallazgos: hallazgos,
+          observaciones: observaciones
+        };
+        
+        console.log('📦 Request body:', requestBody);
+
         const response = await fetch('/api/ai-process', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('auth-token')}`
           },
-          body: JSON.stringify({
-            paciente: {
-              nombre: paciente.nombre,
-              apellido: paciente.apellido,
-              cedula: paciente.cedula,
-              edad: paciente.edad,
-              genero: paciente.genero
-            },
-            fecha: fecha,
-            tipo: tipo,
-            hallazgos: hallazgos,
-            observaciones: observaciones
-          })
+          body: JSON.stringify(requestBody)
         });
 
+        console.log('📊 Response status:', response.status);
+
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ API error text:', errorText);
+          throw new Error(`API error: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('✅ Respuesta IA:', data);
+        console.log('✅ Data recibida:', data);
+
+        if (!data.analisis && !data.resultado) {
+          throw new Error('Sin análisis en respuesta');
+        }
 
         // Mostrar resultado
-        const resultado = data.analisis || data.resultado || 'Sin respuesta de IA';
+        const resultado = data.analisis || data.resultado;
+        console.log('📋 Resultado length:', resultado.length);
+        
         mostrarResultado(resultado, paciente, fecha, tipo);
 
         // Guardar informe
         guardarInforme(paciente, fecha, tipo, hallazgos, resultado);
+        
+        mostrarAlerta('✅ Informe generado exitosamente', 'success');
 
       } catch (error) {
-        console.error('❌ Error:', error);
-        mostrarAlerta('❌ Error al generar informe: ' + error.message, 'error');
+        console.error('❌ Error completo:', error);
+        console.error('Stack:', error.stack);
+        mostrarAlerta('❌ Error: ' + error.message, 'error');
       } finally {
         btn.disabled = false;
       }

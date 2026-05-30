@@ -1,6 +1,6 @@
 /**
  * AI Service — Netlify Function
- * Usa Anthropic Claude API para procesar informes ecosonográficos
+ * Usa Anthropic Claude API para generar informes ecosonográficos
  */
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -19,20 +19,27 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('🎬 AI-Process iniciado');
+
     if (!ANTHROPIC_API_KEY) {
-      console.error('❌ ANTHROPIC_API_KEY no está configurada');
+      console.error('❌ ANTHROPIC_API_KEY no configurada');
       return {
         statusCode: 500,
         headers,
         body: JSON.stringify({ 
           error: 'API key no configurada',
-          analisis: 'Error: Variable de entorno ANTHROPIC_API_KEY no configurada en Netlify'
+          analisis: '❌ Error: ANTHROPIC_API_KEY no configurada en Netlify'
         })
       };
     }
 
     const body = JSON.parse(event.body || '{}');
     const { paciente, fecha, tipo, hallazgos, observaciones } = body;
+
+    console.log('📊 Datos recibidos:');
+    console.log('Paciente:', paciente.nombre);
+    console.log('Tipo:', tipo);
+    console.log('Hallazgos length:', hallazgos?.length);
 
     if (!hallazgos || !hallazgos.trim()) {
       return {
@@ -42,12 +49,10 @@ exports.handler = async (event) => {
       };
     }
 
-    console.log('📡 Llamando Claude API...');
-    console.log('Tipo:', tipo);
-    console.log('Hallazgos:', hallazgos.substring(0, 100) + '...');
+    // Construir prompt
+    const prompt = `Eres un experto en ecosonografía médica. 
 
-    // Prompt para Claude
-    const prompt = `Eres un experto en ecosonografía médica. Analiza los siguientes hallazgos y proporciona un informe profesional.
+Analiza EXACTAMENTE lo que el médico escribió en hallazgos y proporciona un informe profesional.
 
 DATOS DEL PACIENTE:
 - Nombre: ${paciente.nombre} ${paciente.apellido || ''}
@@ -55,23 +60,25 @@ DATOS DEL PACIENTE:
 - Edad: ${paciente.edad || 'No especificada'}
 - Género: ${paciente.genero || 'No especificado'}
 
-DATOS DEL INFORME:
+INFORME:
 - Fecha: ${fecha}
-- Tipo de Ecosonografía: ${tipo}
-- Hallazgos Clínicos:
+- Tipo: ${tipo}
+- Hallazgos:
 ${hallazgos}
 
-${observaciones ? `- Observaciones Adicionales:\n${observaciones}` : ''}
+${observaciones ? `- Observaciones:\n${observaciones}` : ''}
 
-Por favor proporciona:
+GENERA UN INFORME CON:
 1. Resumen de hallazgos
 2. Interpretación clínica
-3. Posibles diagnósticos diferenciales
-4. Recomendaciones y seguimiento
+3. Diagnósticos diferenciales
+4. Recomendaciones
 
-Formato: Respuesta clara, profesional y estructurada.`;
+Sé preciso, profesional y basa todo en lo que escribió el médico.`;
 
-    // Llamar a Claude API
+    console.log('📡 Llamando Claude API...');
+
+    // Llamar a Claude
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -81,7 +88,7 @@ Formato: Respuesta clara, profesional y estructurada.`;
       },
       body: JSON.stringify({
         model: 'claude-opus-4-1',
-        max_tokens: 1500,
+        max_tokens: 2000,
         messages: [
           {
             role: 'user',
@@ -93,15 +100,36 @@ Formato: Respuesta clara, profesional y estructurada.`;
 
     if (!claudeResponse.ok) {
       const errorData = await claudeResponse.text();
-      console.error('❌ Claude API error:', claudeResponse.status, errorData);
-      throw new Error(`Claude API error: ${claudeResponse.status}`);
+      console.error('❌ Claude error:', claudeResponse.status);
+      console.error('Error body:', errorData);
+
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: `Claude API error: ${claudeResponse.status}`,
+          analisis: `❌ Error de API: ${claudeResponse.status}`
+        })
+      };
     }
 
     const claudeData = await claudeResponse.json();
-    console.log('✅ Respuesta de Claude recibida');
+    console.log('✅ Respuesta recibida de Claude');
 
-    // Extraer texto de respuesta
-    const analisis = claudeData.content[0]?.text || 'Sin respuesta de IA';
+    if (!claudeData.content || !claudeData.content[0]) {
+      console.error('❌ No content in response');
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: 'Sin contenido en respuesta',
+          analisis: '❌ Error: Respuesta vacía de Claude'
+        })
+      };
+    }
+
+    const analisis = claudeData.content[0].text;
+    console.log('✅ Análisis generado, length:', analisis.length);
 
     return {
       statusCode: 200,
@@ -117,14 +145,16 @@ Formato: Respuesta clara, profesional y estructurada.`;
     };
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error general:', error.message);
+    console.error('Stack:', error.stack);
+
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         error: 'Error procesando informe',
         mensaje: error.message,
-        analisis: `Error: ${error.message}`
+        analisis: `❌ Error: ${error.message}`
       })
     };
   }
