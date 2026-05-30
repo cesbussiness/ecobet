@@ -1,0 +1,18 @@
+{
+  "name": "ecosonografia",
+  "version": "1.0.0",
+  "description": "Sistema de Informes Médicos con Ecosonografía",
+  "main": "index.js",
+  "scripts": {
+    "build": "bash scripts-build-functions.sh",
+    "dev": "netlify dev",
+    "deploy": "npm run build && netlify deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.16.0",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
