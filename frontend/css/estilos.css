@@ -220,6 +220,7 @@ body.with-sidebar {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  position: relative;
 }
 
 .sidebar-header span {
@@ -766,16 +767,21 @@ tr:hover {
     color: var(--color-text-dark);
     font-size: 1.5rem;
     cursor: pointer;
-    padding: 0.5rem;
-    display: flex;
+    padding: 0.5rem 0.75rem;
+    display: none;
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-md);
     transition: background var(--transition-base);
+    z-index: 1001;
   }
 
   .hamburger-menu:hover {
     background: var(--color-primary-light);
+  }
+
+  .sidebar.mobile-hidden .hamburger-menu {
+    display: flex;
   }
 
   /* Overlay (fondo oscuro) */
@@ -785,16 +791,18 @@ tr:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(15, 23, 42, 0.6);
     opacity: 0;
     visibility: hidden;
     z-index: 998;
     transition: opacity var(--transition-base), visibility var(--transition-base);
+    pointer-events: none;
   }
 
   .sidebar-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
   }
 }
 

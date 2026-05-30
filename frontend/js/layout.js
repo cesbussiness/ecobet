@@ -128,14 +128,31 @@ class Layout {
 
   createMobileToggle() {
     // Crear botón hamburguesa para móvil
-    const header = document.querySelector('.sidebar-header');
+    // Esperar a que el sidebar exista
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) {
+      // Reintentar después de que se cree el sidebar
+      setTimeout(() => this.createMobileToggle(), 100);
+      return;
+    }
+
+    const header = sidebar.querySelector('.sidebar-header');
     if (!header) return;
+
+    // No crear si ya existe
+    if (header.querySelector('.hamburger-menu')) return;
 
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'hamburger-menu';
     toggleBtn.innerHTML = '☰';
     toggleBtn.type = 'button';
-    toggleBtn.setAttribute('aria-label', 'Toggle menu');
+    toggleBtn.setAttribute('aria-label', 'Abrir menú');
+    toggleBtn.style.cssText = `
+      position: absolute;
+      left: var(--space-md);
+      top: 50%;
+      transform: translateY(-50%);
+    `;
     
     toggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -146,12 +163,12 @@ class Layout {
       let overlay = document.querySelector('.sidebar-overlay');
       if (!overlay) {
         overlay = document.createElement('div');
-        overlay.className = 'sidebar-overlay';
+        overlay.className = 'sidebar-overlay active';
         document.body.appendChild(overlay);
         
         overlay.addEventListener('click', () => {
           sidebar?.classList.remove('mobile-active');
-          overlay?.remove();
+          overlay?.classList.remove('active');
         });
       } else {
         overlay.classList.toggle('active');
