@@ -461,6 +461,13 @@
   </div>
 
 
+  <!-- MODAL DE RESULTADO (INFORME) -->
+  <div id="resultado-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: white; border-radius: 16px; padding: 30px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+      <div id="resultado-contenido"></div>
+    </div>
+  </div>
+
   <!-- MODAL DE TRANSCRIPCIÓN EDITABLE -->
   <div class="transcription-modal" id="transcription-modal">
     <div class="transcription-modal-content">
@@ -909,36 +916,39 @@
     }
 
     function mostrarResultado(analisis, paciente, fecha, tipo) {
-      const container = document.getElementById('resultado-container');
+      console.log('📋 Mostrando resultado...');
+      console.log('Análisis length:', analisis?.length);
+      
+      const modal = document.getElementById('resultado-modal');
+      const contenido = document.getElementById('resultado-contenido');
       
       const html = `
-        <div class="form-card">
-          <h2 style="margin-top: 0; font-size: 24px; color: var(--accent);">📋 Informe Generado</h2>
-          
-          <div style="margin-bottom: 20px; padding: 16px; background: var(--light); border-radius: 10px;">
-            <p><strong>Paciente:</strong> ${paciente.nombre} ${paciente.apellido || ''}</p>
-            <p><strong>Cédula:</strong> ${paciente.cedula}</p>
-            <p><strong>Fecha:</strong> ${new Date(fecha).toLocaleDateString('es-ES')}</p>
-            <p><strong>Tipo:</strong> ${tipo}</p>
-          </div>
+        <h2 style="margin-top: 0; color: var(--accent);">✅ Informe Generado</h2>
+        
+        <div style="background: var(--light); padding: 16px; border-radius: 10px; margin-bottom: 20px;">
+          <p><strong>Paciente:</strong> ${paciente?.nombre || 'N/A'} ${paciente?.apellido || ''}</p>
+          <p><strong>Cédula:</strong> ${paciente?.cedula || 'N/A'}</p>
+          <p><strong>Fecha:</strong> ${fecha || 'N/A'}</p>
+          <p><strong>Tipo:</strong> ${tipo || 'N/A'}</p>
+        </div>
 
-          <div class="ai-response">
-            <h3>Análisis IA</h3>
-            <div>${analisis.replace(/\n/g, '<br>')}</div>
-          </div>
+        <div style="max-height: 400px; overflow-y: auto; background: var(--light); padding: 16px; border-radius: 10px; margin-bottom: 20px; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
+${analisis}
+        </div>
 
-          <div class="form-actions" style="margin-top: 30px;">
-            <button class="btn btn-primary" onclick="descargarPDF('${paciente.id}')">
-              📥 Descargar PDF
-            </button>
-            <button class="btn btn-secondary" onclick="enviarEmail('${paciente.id}')">
-              📧 Enviar por Email
-            </button>
-          </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn btn-primary" onclick="document.getElementById('resultado-modal').style.display='none'">
+            ✅ Cerrar
+          </button>
+          <button class="btn btn-secondary" onclick="limpiarForm()">
+            🔄 Nuevo Informe
+          </button>
         </div>
       `;
       
-      container.innerHTML = html;
+      contenido.innerHTML = html;
+      modal.style.display = 'flex';
+      console.log('✅ Modal mostrado');
     }
 
     function guardarInforme(paciente, fecha, tipo, hallazgos, analisis) {
