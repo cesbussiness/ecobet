@@ -305,13 +305,23 @@
 
     async function loadPacientes() {
       try {
+        console.log('📥 Cargando pacientes...');
         const response = await api.getPacientes({limit: 1000});
+        console.log('✅ Pacientes cargados:', response.data);
         renderPacientes(response.data || []);
       } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('pacientes-tbody').innerHTML = `
-          <tr><td colspan="5" class="alert alert-error">Error al cargar pacientes</td></tr>
-        `;
+        console.error('❌ Error al cargar:', error);
+        // Si falla, intentar cargar de localStorage directamente
+        if (typeof storage !== 'undefined') {
+          console.log('📚 Cargando de localStorage...');
+          const pacientes = storage.getPacientes();
+          console.log('✅ Pacientes desde localStorage:', pacientes);
+          renderPacientes(pacientes);
+        } else {
+          document.getElementById('pacientes-tbody').innerHTML = `
+            <tr><td colspan="5" class="alert alert-error">Error al cargar pacientes</td></tr>
+          `;
+        }
       }
     }
 
@@ -394,18 +404,33 @@
         genero: document.getElementById('genero').value
       };
 
+      // Validar que no esté vacío
+      if (!data.nombre || !data.cedula) {
+        alert('⚠️ Por favor llena Nombre y Cédula');
+        return;
+      }
+
       try {
+        console.log('💾 Guardando paciente...', data);
+        
         if (editingId) {
-          await api.updatePaciente(editingId, data);
-          alert('Paciente actualizado');
+          console.log('✏️ Actualizando paciente:', editingId);
+          const resultado = await api.updatePaciente(editingId, data);
+          console.log('✅ Paciente actualizado:', resultado);
+          alert('✅ Paciente actualizado');
         } else {
-          await api.createPaciente(data);
-          alert('Paciente creado');
+          console.log('➕ Creando nuevo paciente...');
+          const resultado = await api.createPaciente(data);
+          console.log('✅ Paciente creado:', resultado);
+          alert('✅ Paciente creado');
         }
+        
         closeModal();
         loadPacientes();
+        
       } catch (error) {
-        alert('Error: ' + error.message);
+        console.error('❌ Error en savePaciente:', error);
+        alert('⚠️ Error: ' + (error.message || error));
       }
     }
 

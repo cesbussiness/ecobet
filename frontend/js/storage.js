@@ -31,9 +31,10 @@ class LocalStorage {
       pacientes.push(paciente);
       this.savePacientes(pacientes);
       console.log('✅ Paciente guardado en localStorage:', paciente);
+      console.log('📊 Total pacientes:', pacientes.length);
       return paciente;
     } catch (error) {
-      console.error('Error agregando paciente:', error);
+      console.error('❌ Error agregando paciente:', error);
       throw error;
     }
   }
